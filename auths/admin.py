@@ -18,9 +18,11 @@ class CustomUserAdmin(UserAdmin):
 class instagram_accountsAdmin(admin.ModelAdmin):
     list_display = ['id', 'username', 'password', 'created', 'updated']
 
+class LeadAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'username', 'status', 'csv_file_number', 'updated']
 
 
-admin.site.register(Lead)
+admin.site.register(Lead,LeadAdmin)
 admin.site.register(Message)
 admin.site.register(MessageTemplate)
 

@@ -15,9 +15,10 @@ from django.http import JsonResponse, HttpResponse
 import os
 from django.conf import settings
 import pytz
-import datetime
-# import requests
 import random
+from datetime import datetime, timedelta
+from django.utils import timezone
+
 # Create your views here.
 
 
@@ -259,6 +260,7 @@ class UserModifyView(APIView):
 
         return Response({'Message': 'User details changed successfully.'}, status=status.HTTP_200_OK)
     
+# ---------------------------------------ADMIN SECTION-----------------------------------------------------------------------------
 class AdminGetInstaAccounts(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -277,8 +279,346 @@ class AdminGetInstaAccounts(APIView):
         else:
             return Response({'Message': 'No instagram account found.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class AdminEditInstaAccounts(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        user_id = get_user_id_from_token(request)
+        user, is_superuser = IsSuperUser(user_id)
+        
+        if not user or not is_superuser:
+            return Response({"Message": "Superuser not found"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # user_id = get_user_id_from_token(request)
+        # user = CustomUser.objects.filter(id=user_id).first()
+        # if not user:
+        #     return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "insta_id" in request.data or not request.data.get('insta_id'):
+            return Response({"Message":"No Instagram Account Id Found"})
+
+        insta_id = request.data.get('insta_id')
+
+        try:
+            account = instagram_accounts.objects.get(id=insta_id)
+        except instagram_accounts.DoesNotExist:
+            return Response({'Message': 'Account not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if username:
+            account.username = username
+        if password:
+            account.password = password
+        if not username and not password:
+            return Response({'Message': 'Could not found Insta Account detail to update'}, status=status.HTTP_404_NOT_FOUND)
+
+        account.save()
+        return Response({'Message': 'Account Details updated'}, status=status.HTTP_200_OK)
+
+class AdminDeleteInstaAccounts(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        user_id = get_user_id_from_token(request)
+        user, is_superuser = IsSuperUser(user_id)
+        
+        if not user or not is_superuser:
+            return Response({"Message": "Superuser not found"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # user_id = get_user_id_from_token(request)
+        # user = CustomUser.objects.filter(id=user_id).first()
+        # if not user:
+        #     return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "insta_id" in request.data or not request.data.get('insta_id'):
+            return Response({"Message":"No Instagram Account Id Found"})
+
+        insta_ids = request.data.get('insta_id')
+        
+        if not insta_ids:
+            return Response({"Message": "No Instagram Account IDs Found"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not isinstance(insta_ids, list):
+            return Response({"Message": "Invalid data format. insta_ids should be a list of integers"}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count = 0
+        not_found_ids = []
+
+        for insta_id in insta_ids:
+            try:
+                account = instagram_accounts.objects.get(id=insta_id)
+                account.delete()
+                deleted_count += 1
+            except instagram_accounts.DoesNotExist:
+                not_found_ids.append(insta_id)
+
+        if not_found_ids:
+            return Response({
+                'Message': f'{deleted_count} account(s) deleted successfully. The following account IDs were not found: {not_found_ids}'
+            }, status=status.HTTP_207_MULTI_STATUS)
+        
+        return Response({'Message': f'All {deleted_count} account(s) deleted successfully'}, status=status.HTTP_200_OK)
+    
 
 
+class AdminViewUsers(APIView):
+    """ 
+    Get a user profile data with email and password
+    """
+    renderer_classes = [UserRenderer]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, format=None):
+        
+
+        user_id = get_user_id_from_token(request)
+        user, is_superuser = IsSuperUser(user_id)
+
+        if not user or not is_superuser:
+            return Response({"Message": "Superuser not found"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        main_user_id = request.data.get("user_id")
+
+        if not "user_id" in request.data or not request.data.get('user_id'):
+            return Response({"Message":"User Id not Found!!!!"})
+
+        
+        user = CustomUser.objects.filter(id=main_user_id).first()
+
+        if user:
+            serializer = UserProfileSerializer(user)
+
+
+            Insta_history = []
+
+            insta_count=0
+            for insta in instagram_accounts.objects.filter(user=user) :
+            
+                tmp = {
+                    'user' : insta.user,
+                    'id' : insta.id,
+                    'username' : insta.username,
+                    # 'password' : insta.password,#created.strftime("%d/%m/%Y"),
+                    'created': insta.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'updated': insta.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                Insta_history.append(tmp)
+            insta_count=len(Insta_history)
+            
+            Led_history = []
+            lead_count = 0
+            for LeadHistory in Lead.objects.filter(instagram_account__user=user):
+                tmp = {
+                    'id' : LeadHistory.id,
+                    'amount' : LeadHistory.username,
+                    'transection_id' : LeadHistory.name,
+                    'status' : LeadHistory.status,
+                    'created' : LeadHistory.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'updated' : LeadHistory.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                Led_history.append(tmp)
+            lead_count = len(Led_history)
+
+            Mess_history = []
+            message_count= 0
+            for MessageHistory in Message.objects.filter(instagram_account__user=user):
+                tmp = {
+                    'id' : MessageHistory.id,
+                    'content' : MessageHistory.content,
+                    'scheduled_time' : MessageHistory.scheduled_time,
+                    'sent_status' : MessageHistory.sent,
+                    'sent_time' : MessageHistory.sent_time,
+                    'created' : MessageHistory.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'update' : MessageHistory.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                Mess_history.append(tmp)
+            message_count = len(Mess_history)
+                    
+            jsonn_response = {
+                'user_data' : serializer.data,
+                'Total_Insta_account': insta_count,
+                'Total_Message_count' : message_count,
+                'Total_lead_count' : lead_count,
+            }
+            response = Response(jsonn_response, status=status.HTTP_200_OK)
+            
+            # Set the Referrer Policy header
+            response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+            return response
+        else:
+            return Response({"Message": 'Unable to find user detail'})
+
+
+class AdminViewAllUsers(APIView):
+    """ 
+    Get user profile data with email and password
+    """
+    renderer_classes = [UserRenderer]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        user_id = get_user_id_from_token(request)
+        user, is_superuser = IsSuperUser(user_id)
+
+        if not user or not is_superuser:
+            return Response({"Message": "Superuser not found"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        users = CustomUser.objects.all()
+        user_data_list = []
+
+        for user in users:
+
+            user_main_id=user.id
+            _, is_superuser = IsSuperUser(user_main_id)
+
+            serializer = UserProfileSerializer(user)
+            insta_history = []
+            lead_history = []
+            message_history = []
+
+            for insta in instagram_accounts.objects.filter(user=user):
+                insta_data = {
+                    'user': insta.user,
+                    'id': insta.id,
+                    'username': insta.username,
+                    'created': insta.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'updated': insta.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                insta_history.append(insta_data)
+                
+            insta_count = len(insta_history)
+
+            for lead_history_obj in Lead.objects.filter(instagram_account__user=user):
+                lead_data = {
+                    'id': lead_history_obj.id,
+                    'amount': lead_history_obj.username,
+                    'transection_id': lead_history_obj.name,
+                    'status': lead_history_obj.status,
+                    'created': lead_history_obj.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'updated': lead_history_obj.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                lead_history.append(lead_data)
+                
+            lead_count = len(lead_history)
+
+            for message_history_obj in Message.objects.filter(instagram_account__user=user):
+                message_data = {
+                    'id': message_history_obj.id,
+                    'content': message_history_obj.content,
+                    'scheduled_time': message_history_obj.scheduled_time,
+                    'sent_status': message_history_obj.sent,
+                    'sent_time': message_history_obj.sent_time,
+                    'created': message_history_obj.created.strftime("%d/%m/%Y %H:%M:%S"),
+                    'update': message_history_obj.updated.strftime("%d/%m/%Y %H:%M:%S"),
+                }
+                message_history.append(message_data)
+                
+            message_count = len(message_history)
+
+            user_data = {
+                'user_data': serializer.data,
+                'IsAdmin': is_superuser,
+                'Total_Insta_account': insta_count,
+                'Total_Message_count': message_count,
+                'Total_lead_count': lead_count,
+            }
+
+            user_data_list.append(user_data)
+
+        response_data = {
+            "Message": "Analytics data Fetched Successfully",
+            "Data": user_data_list
+        }
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
+
+
+
+
+
+class AdminAnalytics(APIView):
+    """ 
+    Get-Analytics if token is of super user
+    """
+    renderer_classes = [UserRenderer]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        user_id = get_user_id_from_token(request)
+        user, is_superuser = IsSuperUser(user_id)
+        if not user or not is_superuser:
+            msg = 'could not find the super user'
+            return Response({"Message": msg}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not "date_filter" in request.data or not request.data.get("date_filter"):
+            return Response({"Message":"Please specify the date_filter eg: day, week, month"}, status=status.HTTP_400_BAD_REQUEST)
+
+        date_filter = request.data.get("date_filter")
+        now = timezone.now()
+        analytics_data = []
+
+        if date_filter == 'day':
+            for i in range(1, 13):
+                start_date = now - timedelta(days=i)
+                end_date = now - timedelta(days=i-1)
+                data = self.get_analytics_data(start_date, end_date)
+                analytics_data.append(data)
+        elif date_filter == 'week':
+            for i in range(1, 13):
+                start_date = now - timedelta(weeks=i)
+                end_date = now - timedelta(weeks=i-1)
+                data = self.get_analytics_data(start_date, end_date)
+                analytics_data.append(data)
+        elif date_filter == 'month':
+            for i in range(1, 13):
+                start_date = now - timedelta(days=30*i)
+                end_date = now - timedelta(days=30*(i-1))
+                data = self.get_analytics_data(start_date, end_date)
+                analytics_data.append(data)
+        else:
+            return Response({"Message":"Invalid date_filter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(analytics_data, status=status.HTTP_200_OK)
+
+    def get_analytics_data(self, start_date, end_date):
+
+        total_user= 0
+        # User Table
+        user_ = CustomUser.objects.filter(created__gte=start_date,  created__lte=end_date)
+        total_user = len(user_)
+
+        # Payment Table
+        insta = instagram_accounts.objects.filter(updated__gte=start_date,  updated__lte=end_date)
+        total_insta_account = len(insta)        
+
+        # Credit Table
+        total_leads_records = 0
+        leads = Lead.objects.filter(updated__gte=start_date,  updated__lte=end_date)
+        total_leads_records = len(leads)
+
+        # Original Image Table
+        messg = Message.objects.filter(updated__gte=start_date,  updated__lte=end_date)
+        total_messages_count = len(messg)
+
+        jsonn_response = {
+            'Total user' : total_user,
+            'Total Insta Accounts' : total_insta_account,
+            'Total Message Records': total_messages_count,
+            'Total Leads Count': total_leads_records,
+        }
+        # return JsonResponse(jsonn_response, status=status.HTTP_200_OK)
+        
+
+        return jsonn_response
+
+
+# ---------------------------------------ADMIN SECTION-----------------------------------------------------------------------------
 
 class AddInstagramAccount(APIView):
     permission_classes = [IsAuthenticated]
@@ -402,6 +742,295 @@ class DeleteInstagramAccount(APIView):
             }, status=status.HTTP_207_MULTI_STATUS)
         
         return Response({'Message': f'All {deleted_count} account(s) deleted successfully'}, status=status.HTTP_200_OK)
+
+
+
+class UserProfileView(APIView):
+    """ 
+    Get a user profile data with email and password
+    """
+    renderer_classes = [UserRenderer]
+    permission_classes = [IsAuthenticated]
+    def get(self, request, format=None):
+        serializer = UserProfileSerializer(request.user)
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+        Insta_history = []
+
+        insta_count=0
+        for insta in instagram_accounts.objects.filter(user=user) :
+          
+            tmp = {
+                'user' : insta.user,
+                'id' : insta.id,
+                'username' : insta.username,
+                # 'password' : insta.password,#created.strftime("%d/%m/%Y"),
+                'created': insta.created.strftime("%d/%m/%Y %H:%M:%S"),
+                'updated': insta.updated.strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            Insta_history.append(tmp)
+        insta_count=len(Insta_history)
+        
+        Led_history = []
+        lead_count = 0
+        for LeadHistory in Lead.objects.filter(instagram_account__user=user):
+            tmp = {
+                'id' : LeadHistory.id,
+                'amount' : LeadHistory.username,
+                'transection_id' : LeadHistory.name,
+                'status' : LeadHistory.status,
+                'created' : LeadHistory.created.strftime("%d/%m/%Y %H:%M:%S"),
+                'updated' : LeadHistory.updated.strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            Led_history.append(tmp)
+        lead_count = len(Led_history)
+
+        Mess_history = []
+        message_count= 0
+        for MessageHistory in Message.objects.filter(instagram_account__user=user):
+            tmp = {
+                'id' : MessageHistory.id,
+                'content' : MessageHistory.content,
+                'scheduled_time' : MessageHistory.scheduled_time,
+                'sent_status' : MessageHistory.sent,
+                'sent_time' : MessageHistory.sent_time,
+                'created' : MessageHistory.created.strftime("%d/%m/%Y %H:%M:%S"),
+                'update' : MessageHistory.updated.strftime("%d/%m/%Y %H:%M:%S"),
+            }
+            Mess_history.append(tmp)
+        message_count = len(Mess_history)
+                
+        jsonn_response = {
+            'user_data' : serializer.data,
+            'Total_Insta_account': insta_count,
+            'Total_Message_count' : message_count,
+            'Total_lead_count' : lead_count,
+        }
+        response = Response(jsonn_response, status=status.HTTP_200_OK)
+        
+        # Set the Referrer Policy header
+        response['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+        return response
+
+
+#----------------------------------------------------------------CSV file and Leads-------------------------------------------------
+from django.db import transaction
+import uuid
+
+class SaveLeadData(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        instagram_account_id = request.data.get('instagram_id')
+        if not instagram_account_id:
+            return Response({"Message": "No Instagram Account found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            instagram_account = instagram_accounts.objects.get(id=instagram_account_id,user = user)
+        except:
+            return Response({"Message":"No Instagram Account Found!!!!!"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        instagram_account.user = user
+
+        data = request.data  # Assuming data is sent as JSON
+
+        # Generate a new unique CSV file number
+        csv_file_number = str(uuid.uuid4())
+
+        for lead_data in data['leads']:
+            name = lead_data.get('name')
+            # email = lead_data.get('email')
+            # phone_number = lead_data.get('phone_number')
+            username = lead_data.get('username')
+            statuss = lead_data.get('status')
+
+            # Assuming instagram_account is passed as a parameter
+            # instagram_account_id = lead_data.get('instagram_account_id')
+
+            # Create Lead object and save
+            lead = Lead.objects.create(
+                csv_file_number=csv_file_number,
+                instagram_account=instagram_account,
+                name=name,
+                # email=email,
+                # phone_number=phone_number,
+                username=username,
+                status=statuss
+            )
+            lead.save()
+
+        return Response({'message': 'Lead data saved successfully'}, status=status.HTTP_201_CREATED)
+
+
+class GetLeaddata(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        try:
+            # Find all Lead objects associated with the specified csv_file_number and delete them
+            lead_obj= Lead.objects.filter(instagram_account__user=user)
+
+            if not lead_obj:
+                return Response({'Message': 'No Lead objects found'}, status=status.HTTP_404_NOT_FOUND)
+
+            lead_data = []
+
+            for leads in lead_obj:
+                tmp={
+
+                    "instagram_account":leads.instagram_account.username,
+                    "name":leads.name,
+                    "username":leads.username,
+                    "leads_status":leads.status,
+                    "csv_file_number":leads.csv_file_number
+                }
+                lead_data.append(tmp)
+
+
+
+            return Response({'Message': 'Lead objects fetched successfully', "Lead_data":lead_data}, status=status.HTTP_200_OK)
+
+        except Lead.DoesNotExist:
+            return Response({'Message': 'No Lead objects found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({"Message":f"Error Occured while fetching Lead Object: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class DeleteLeadCSV(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "csv_file_number" in request.data or not request.data.get('csv_file_number'):
+            return Response({"Message":"No csv_file_number Found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        csv_file_number = request.data.get('csv_file_number')
+
+        try:
+
+            with transaction.atomic():
+                # Find all Lead objects associated with the specified csv_file_number and delete them
+                deleted_count, _ = Lead.objects.filter(csv_file_number=csv_file_number,instagram_account__user=user).delete()
+
+            if deleted_count == 0:
+                return Response({'Message': 'No Lead objects found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({'Message': f'{deleted_count} Lead objects deleted successfully'}, status=status.HTTP_200_OK)
+
+        except Lead.DoesNotExist:
+            return Response({'Message': 'No Lead objects found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({"Message":f"Error Occured: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class DeleteLeadViaId(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "lead_id" in request.data or not request.data.get('lead_id'):
+            return Response({"Message":"No lead_id Found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # lead_id = request.data.get('lead_id')
+
+        # try:
+        #     with transaction.atomic():
+        #         # Find all Lead objects associated with the specified csv_file_number and delete them
+        #         delete_lead = Lead.objects.get(id=lead_id,instagram_account__user=user)
+        #         delete_lead.delete()
+
+        #     return Response({'Message': 'Lead objects deleted successfully'}, status=status.HTTP_200_OK)
+
+        # except Lead.DoesNotExist:
+        #     return Response({'Message': 'No Lead objects found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+
+        # except Exception as e:
+        #     return Response({"Message":f"Error Occured: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+        lead_ids = request.data.get('lead_id')
+
+        if not lead_ids:
+            return Response({"Message": "No lead_id(s) found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not isinstance(lead_ids, list):
+            return Response({"Message": "Invalid data format. lead_id(s) should be a list of integers"}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count = 0
+        not_found_ids = []
+
+        try:
+            with transaction.atomic():
+                for lead_id in lead_ids:
+                    try:
+                        delete_lead = Lead.objects.get(id=lead_id, instagram_account__user=user)
+                        delete_lead.delete()
+                        deleted_count += 1
+                    except Lead.DoesNotExist:
+                        not_found_ids.append(lead_id)
+
+            if not_found_ids:
+                return Response({'Message': f'{deleted_count} Lead object(s) deleted successfully. The following Lead IDs were not found: {not_found_ids}'},
+                                status=status.HTTP_207_MULTI_STATUS)
+            else:
+                return Response({'Message': f'All {deleted_count} Lead object(s) deleted successfully'},
+                                status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"Message": f"Error Occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+# class UpdateLeadCSV(APIView):
+#     def post(self, request, csv_file_number, format=None):
+#         new_data = request.data  # Assuming data is sent as JSON
+
+
+#         with transaction.atomic():
+#             # Update all Lead objects with the old csv_file_number to use the new one
+#             Lead.objects.filter(csv_file_number=csv_file_number).update(csv_file_number=new_csv_file_number)
+
+#             # Process new data and create/update Lead objects as needed
+#             for lead_data in new_data:
+#                 # Process lead_data and create/update Lead objects
+#                 pass
+
+#         return Response({'message': 'CSV file updated successfully'}, status=status.HTTP_200_OK)
+
+
+#----------------------------------------------------------------CSV file and Leads-------------------------------------------------
+
+
 
 
 

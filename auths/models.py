@@ -91,18 +91,16 @@ class instagram_accounts(TimeStampModel):
 
 
 
-class Lead(models.Model): # This will take up the .CSV FILE DATA
+class Lead(TimeStampModel): # This will take up the .CSV FILE DATA
     instagram_account = models.ForeignKey(instagram_accounts, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    email = models.EmailField()
-    phone_number = models.CharField(max_length=15)
-    filed4 = models.CharField(max_length=150)
-    filed1 = models.CharField(max_length=150)
-    filed2 = models.CharField(max_length=150)
-    filed3 = models.CharField(max_length=150)
+    # email = models.EmailField(null=True, blank=True)
+    csv_file_number = models.CharField(max_length=30)
+    username = models.CharField(max_length=150)
+    status = models.CharField(max_length=150)
     # Add other fields as necessary
 
-class Message(models.Model):
+class Message(TimeStampModel):
     instagram_account = models.ForeignKey(instagram_accounts, on_delete=models.CASCADE)
     content = models.TextField()
     scheduled_time = models.DateTimeField()
@@ -110,7 +108,7 @@ class Message(models.Model):
     sent_time = models.DateTimeField(null=True, blank=True)
     # Add other fields as necessary
 
-class MessageTemplate(models.Model):
+class MessageTemplate(TimeStampModel):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     template_name = models.CharField(max_length=255)
     template_content = models.TextField()
