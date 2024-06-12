@@ -56,8 +56,14 @@ urlpatterns = [
 
     path('api/delete-lead-id/', DeleteLeadViaId.as_view(), name='api-DeleteLeadViaId'), 
 
+    path('api/edit-lead-id/', EditLeadViaId.as_view(), name='api-EditLeadViaId'), 
+
     path('api/get-lead-data/', GetLeaddata.as_view(), name='api-GetLeaddata'), 
 
 #---------------------------------------LEAD and CSV urls-----------------------------------------------------------------
+
+    path('api/add-message-template/', AddMessageTemplate.as_view(), name='api-AddMessageTemplate'),  
+
+    path('api/get-message-template/', GetMessageTemplate.as_view(), name='api-GetMessageTemplate'),  
 
 ]

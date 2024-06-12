@@ -959,24 +959,6 @@ class DeleteLeadViaId(APIView):
         if not "lead_id" in request.data or not request.data.get('lead_id'):
             return Response({"Message":"No lead_id Found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # lead_id = request.data.get('lead_id')
-
-        # try:
-        #     with transaction.atomic():
-        #         # Find all Lead objects associated with the specified csv_file_number and delete them
-        #         delete_lead = Lead.objects.get(id=lead_id,instagram_account__user=user)
-        #         delete_lead.delete()
-
-        #     return Response({'Message': 'Lead objects deleted successfully'}, status=status.HTTP_200_OK)
-
-        # except Lead.DoesNotExist:
-        #     return Response({'Message': 'No Lead objects found for deletion'}, status=status.HTTP_404_NOT_FOUND)
-
-        # except Exception as e:
-        #     return Response({"Message":f"Error Occured: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-
-
 
         lead_ids = request.data.get('lead_id')
 
@@ -1011,36 +993,128 @@ class DeleteLeadViaId(APIView):
 
 
 
-# class UpdateLeadCSV(APIView):
-#     def post(self, request, csv_file_number, format=None):
-#         new_data = request.data  # Assuming data is sent as JSON
+class EditLeadViaId(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if "leads" not in request.data or not request.data.get('leads'):
+            return Response({"Message": "No leads Found"}, status=status.HTTP_404_NOT_FOUND)
+
+        leads_data = request.data.get('leads')
+
+        if not isinstance(leads_data, list):
+            return Response({"Message": "Invalid data format. Leads should be a list of dictionaries"}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_count = 0
+        not_found_ids = []
+
+        try:
+            with transaction.atomic():
+                for lead_data in leads_data:
+                    lead_id = lead_data.get('lead_id')
+
+                    if not lead_id:
+                        return Response({"Message": "lead_id not found in one or more leads"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    try:
+                        lead = Lead.objects.get(id=lead_id, instagram_account__user=user)
+
+                        if 'name' in lead_data:
+                            lead.name = lead_data.get('name', lead.name)
+                        if 'username' in lead_data:
+                            lead.username = lead_data.get('username', lead.username)
+                        if 'status' in lead_data:
+                            lead.status = lead_data.get('status', lead.status)
 
 
-#         with transaction.atomic():
-#             # Update all Lead objects with the old csv_file_number to use the new one
-#             Lead.objects.filter(csv_file_number=csv_file_number).update(csv_file_number=new_csv_file_number)
+                        lead.save()
+                        updated_count += 1
+                    except Lead.DoesNotExist:
+                        not_found_ids.append(lead_id)
 
-#             # Process new data and create/update Lead objects as needed
-#             for lead_data in new_data:
-#                 # Process lead_data and create/update Lead objects
-#                 pass
+            if not_found_ids:
+                return Response({'Message': f'{updated_count} Lead object(s) updated successfully. The following Lead IDs were not found: {not_found_ids}'},
+                                status=status.HTTP_207_MULTI_STATUS)
+            else:
+                return Response({'Message': f'All {updated_count} Lead object(s) updated successfully'},
+                                status=status.HTTP_200_OK)
 
-#         return Response({'message': 'CSV file updated successfully'}, status=status.HTTP_200_OK)
-
+        except Exception as e:
+            return Response({"Message": f"Error Occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #----------------------------------------------------------------CSV file and Leads-------------------------------------------------
 
 
 
 
+#----------------------------------------------------------------Message Template-------------------------------------------------
+
+class AddMessageTemplate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+        
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        template_name = request.data.get('template_name')
+        template_content = request.data.get('template_content')
+
+        if not template_name or not template_content:
+            return Response({'Message': 'template_name and template_content are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if MessageTemplate.objects.filter(template_name=template_name, template_content=template_content, user=user).exists():
+            return Response({'Message': 'Message Template already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        mess_temp = MessageTemplate(template_name=template_name, template_content=template_content, user=user)
+        mess_temp.save()
+
+        return Response({'Message': 'Message Template created Successfully', 'id': mess_temp.id}, status=status.HTTP_201_CREATED)
 
 
 
+class GetMessageTemplate(APIView):
+    def post(self, request, format=None):
 
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
 
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        temp_id = request.data.get('temp_id')
 
+        if not temp_id:
+            return Response({'Message': 'Template id not found'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            Mess_obj= MessageTemplate.objects.filter(user=user, id= temp_id).first()
 
+            if not Mess_obj:
+                return Response({'Message': 'No Message Template found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            tmp={
+            "Message Template id" : Mess_obj.id,
+            "Message Template id" : Mess_obj.user.email,
+            "Message Template id" : Mess_obj.template_name,
+            "Message Template id" : Mess_obj.template_content}
+
+            return Response({'Message': 'Message Template fetched successfully', "Message_template_data":tmp}, status=status.HTTP_200_OK)
+
+        except Lead.DoesNotExist:
+            return Response({'Message': 'No Message Template found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({"Message":f"Error Occured while fetching Message Template: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#----------------------------------------------------------------Message Template-------------------------------------------------
 
 
 
