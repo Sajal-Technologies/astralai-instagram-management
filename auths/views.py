@@ -1361,10 +1361,10 @@ class InstagramBotView(APIView):
         accounts = [
             {'username': username, 'password': password, 'recipients': recipient_list,
              'message': messages},
-            {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
-             'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
-                         ["This is the 3 Successfully test", "This is the 4 Successfully test"],
-                         ["This is the third Successfully test"]]}
+            # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
+            #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
+            #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
+            #              ["This is the third Successfully test"]]}
         ]
 
         # print("The account detail is: ",accounts)
