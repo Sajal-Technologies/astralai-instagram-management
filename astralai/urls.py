@@ -66,4 +66,7 @@ urlpatterns = [
 
     path('api/get-message-template/', GetMessageTemplate.as_view(), name='api-GetMessageTemplate'),  
 
+
+    path('api/insta_messages/', InstagramBotView.as_view(), name='api-InstagramBotView'),
+
 ]

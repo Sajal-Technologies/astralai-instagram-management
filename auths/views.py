@@ -1117,191 +1117,267 @@ class GetMessageTemplate(APIView):
 #----------------------------------------------------------------Message Template-------------------------------------------------
 
 
-
-
-#---------------------------------------------------------UserEmailVerification By Adil--------------------------------------------------------
-    
-# class UserEmailVerificationView(APIView):
-#     def post(self, request):
-#         email = request.data.get('email')
-#         verification_code = request.data.get('verification_code')
-#         # Check if required fields are provided
-#         if not email or not verification_code:
-#             return Response({'Message': 'Please provide Email and Verification code'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             user = CustomUser.objects.get(email=email)
-
-#             if user.is_user_verified == True:
-#                 # If user is already verified, return a message indicating so
-#                 return Response({'Message': 'User is already verified.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-#              # Check if verification code is a valid number
-#             if not verification_code.isdigit():
-#                 return Response({'Message': 'Invalid Verification Code.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#             if str(user.verification_code) == verification_code:
-#                 user.is_user_verified = True
-#                 token = get_tokens_for_user(user)
-#                 verification_code = random.randint(100000, 999999)# Extra Code added to change the code after Process because same code will be used multiple times ex- same code will be used to chnage password.
-#                 user.verification_code = verification_code# Extra Code added to change the code after Process because same code will be used multiple times ex- same code will be used to chnage password.
-#                 user.save()
-#                 # if user.membership:
-#                 #     Mem=Membership.objects.filter(name=user.membership.name).first()
-#                 #     memebership_id=Mem.id
-#                 #     return Response({'token':token,'verified' : user.is_user_verified, 'Message':'Email verified successfully.', "membership_id":memebership_id, "membership":user.membership.name, "membership_expiry_date":str(user.membership_expiry), "subscription_status":user.is_subscribed, "stripe_customer_id":user.stripe_customer_id}, status=status.HTTP_200_OK)
-#                 # else:
-#                 return Response({'token':token,'verified' : user.is_user_verified, 'Message':'Email verified successfully.', "membership_id":None, "membership":None, "membership_expiry_date":None, "subscription_status":user.is_subscribed, "stripe_customer_id":user.stripe_customer_id}, status=status.HTTP_200_OK)
-#                 # return Response({'token':token,'Message': 'Email verified successfully.'}, status=status.HTTP_200_OK)
-#             else:
-#                 return Response({'Message': 'Entered Verification code is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
-#         except CustomUser.DoesNotExist:
-#             # If email is not in records, prompt user to register first
-#             return Response({'Message': 'Email not in records. Please register first.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#---------------------------------------------------------UserEmailVerification By Adil--------------------------------------------------------
- 
-#---------------------------------------------------------Resend OTP API by ADIL----------------------------------------------------------------
-
-# class ResendOTPView(APIView):
-#     def post(self, request):
-#         email = request.data.get('email')
-#         if not email:
-#             return Response({'Message': 'Please provide an email address.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             user = CustomUser.objects.get(email=email)
-#             verification_code = random.randint(100000, 999999)
-#             user.verification_code = verification_code
-#             user.save()
-#             # Call the function to send OTP via email
-#             send_otp_via_email(email)
-#             return Response({'Message': 'New verification code sent successfully.'}, status=status.HTTP_200_OK)
-#         except CustomUser.DoesNotExist:
-#             return Response({'Message': 'Email not found in records. Register First'}, status=status.HTTP_404_NOT_FOUND)
-
-
-#---------------------------------------------------------Resend OTP APY by ADIL---------------------------------------------------------------
-
-
-#---------------------------------------------Change Password by Adil------------------------------------------------------------
-
-# class UserChangePasswordView(APIView):
-#     """ 
-#     Reset user password
-#     """
-#     renderer_classes = [UserRenderer]
-#     permission_classes = [AllowAny]  # Allow any user to access this endpoint
-
-#     def post(self, request, format=None):
-#         email = request.data.get('email')
-#         verification_code = request.data.get('verification_code')
-#         new_password = request.data.get('new_password')
-
-#         # Check if required fields are provided
-#         if not email or not verification_code or not new_password:
-#             return Response({'Message': 'Please provide the Email, Verification code and New Password'}, status=status.HTTP_400_BAD_REQUEST)
-
-#          # Check if verification code is a valid number
-#         if not verification_code.isdigit():
-#             return Response({'Message': 'Invalid Verification Code.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         try:
-#             user = CustomUser.objects.get(email=email, verification_code=verification_code)
-#             verification_code = random.randint(100000, 999999)# Extra Code added to change the code after Process because same code will be used multiple times.
-#             user.verification_code = verification_code# Extra Code added to change the code after Process because same code will be used multiple times.
-#             user.save()# Extra Code added to change the code after Process because same code will be used multiple times.
-#         except CustomUser.DoesNotExist:
-#             return Response({'Message': 'Invalid email or verification code.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         serializer = UserChangePasswordSerializer(instance=user, data={'password': new_password, 'password2': new_password})
-#         try:
-#             serializer.is_valid(raise_exception=True)
-#             serializer.save()
-#             return Response({'Message': 'Password changed successfully'}, status=status.HTTP_200_OK)
-#         except ValidationError as e:
-#             # Handle validation errors
-#             return Response({'Message': e.detail}, status=status.HTTP_400_BAD_REQUEST)
-
-
-#---------------------------------------------Change Password by Adil------------------------------------------------------------
+#----------------------------------------------------------------Instagram Message View--------------------------------------------------------
 
 
 
-# class AdminModifyUser(APIView):
-#     """ 
-#     Delete-user if token is of super user
-#     """
-#     renderer_classes = [UserRenderer]
-#     permission_classes = [IsAuthenticated]
-#     def post(self, request, format=None):
-#         user_id = get_user_id_from_token(request)
-#         user, is_superuser = IsSuperUser(user_id)
-#         if not user or not is_superuser:
-#             msg = 'could not found the super user'
-#             return Response({"Message": msg}, status=status.HTTP_401_UNAUTHORIZED)
+# instabot/views.py
+import time
+import logging
+import threading
+from django.http import JsonResponse
+from django.views import View
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+import undetected_chromedriver as uc
+
+class InstagramBot:
+    def __init__(self, username, password, recipients, message):
+        self.username = username
+        self.password = password
+        self.recipients = recipients
+        self.message = message
+        self.base_url = 'https://www.instagram.com/'
+        self.bot = uc.Chrome()
+        self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
+        self.popup_thread.start()
+        try:
+            self.login()
+        except Exception as e:
+            logging.error(f"Error during login for {self.username}: {e}")
+            self.bot.quit()
+
+    def handle_popup(self):
+        while True:
+            try:
+                not_now_button = WebDriverWait(self.bot, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
+                )
+                not_now_button.click()
+                logging.info(f"Popup closed for {self.username}")
+            except Exception as e:
+                time.sleep(1)
+
+    def login(self):
+        self.bot.get(self.base_url)
+        try:
+            enter_username = WebDriverWait(self.bot, 20).until(
+                EC.presence_of_element_located((By.NAME, 'username')))
+            enter_username.send_keys(self.username)
+
+            enter_password = WebDriverWait(self.bot, 20).until(
+                EC.presence_of_element_located((By.NAME, 'password')))
+            enter_password.send_keys(self.password)
+            enter_password.send_keys(Keys.RETURN)
+            time.sleep(5)
+        except Exception as e:
+            logging.error(f"Error entering login credentials: {e}")
+            return
+
+        time.sleep(3)
+        try:
+            self.bot.find_element(By.XPATH,
+                                  '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
+            time.sleep(2)
+        except Exception as e:
+            logging.error(f"Error navigating to message section: {e}")
+            return
+
+        for recipient, messages in zip(self.recipients, self.message):
+            for message in messages:
+                # print("The message in instabot are as folows: ", message)
+                # print("The recipient in instabot are as folows: ", recipient)
+                try:
+                    time.sleep(3)
+                    try:
+                        new_message_button = WebDriverWait(self.bot, 5).until(
+                            EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
+                        )
+                        new_message_button.click()
+                        time.sleep(2)
+                        recipient_input = WebDriverWait(self.bot, 5).until(
+                            EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
+                        )
+                        recipient_input.send_keys(recipient)
+                        time.sleep(2)
+
+                        recipient_suggestion = WebDriverWait(self.bot, 5).until(
+                            EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
+                        )
+                        recipient_suggestion.click()
+                        time.sleep(2)
+
+                        next_button = WebDriverWait(self.bot, 5).until(
+                            EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
+                        )
+                        next_button.click()
+                        time.sleep(2)
+                    except Exception as e:
+                        logging.error(f"Error adding recipient {recipient}: {e}")
+                        continue
+
+                    try:
+                        message_area = WebDriverWait(self.bot, 5).until(
+                            EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+                        )
+                        time.sleep(3)
+                        message_area.send_keys(message)
+                        time.sleep(1)
+                        message_area.send_keys(Keys.RETURN)
+                        time.sleep(2)
+
+                    except Exception as e:
+                        logging.error(f"Error sending message to {recipient}: {e}")
+                        continue
+                    finally:
+                        self.bot.refresh()
+                        time.sleep(2)
+
+                except Exception as e:
+                    logging.error(f"Error handling message for {recipient}: {e}")
+
+    def logout(self):
+        try:
+            profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
+            self.bot.find_element(By.XPATH, profile_xpath).click()
+            time.sleep(1)
+
+            setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
+            self.bot.find_element(By.XPATH, setting_icon_xpath).click()
+            time.sleep(1)
+
+            logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
+            self.bot.find_element(By.XPATH, logout_xpath).click()
+            time.sleep(2)
+        except Exception as e:
+            logging.error(f"An error occurred during logout: {e}")
+
+    def close_browser(self):
+        self.logout()
+        time.sleep(3)
+        self.bot.quit()
+
+def send_messages(account):
+    username = account['username']
+    password = account['password']
+    recipients = account['recipients']
+    message = account['message']
+    try:
+        instagram_bot = InstagramBot(username, password, recipients, message)
+        instagram_bot.close_browser()
+        return f"Messages sent from {username} to {recipients}"
+    except Exception as e:
+        logging.error(f"An error occurred with account {username}: {e}")
+        return f"Failed to send messages from {username}"
+
+from django.views.decorators.csrf import csrf_exempt
+
+class InstagramBotView(APIView):
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def post(self, request):
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+        instagram_account_id=request.data.get('instagram_account_id')
+
+        if not instagram_account_id:
+            return Response({"Message":"Please Provide instagram_account_id"})
         
-#         user_modified_status = False
+        recipient_list=request.data.get('recipient_list')
 
-#         if 'email' not in request.data or not request.data.get('email'):
-#             return Response({'Message' : 'could not got the user, Please provide email'}, status=status.HTTP_204_NO_CONTENT)
+        if not isinstance(recipient_list, list):
+            return Response({"Message": "Recipient_list must be a list. ex- ['recipient1', 'recipient2', 'recipient3']"})
 
-#         user_modified_email =request.data['email']
-
-#         new_name =request.data['new_name']
-#         new_password =request.data['new_password']
-
-#         if not new_name and not new_password:
-#             return Response({'Message' : 'could not got any user details to modify, Please provide name or new password'}, status=status.HTTP_204_NO_CONTENT)
-
-
-#         user_modified = CustomUser.objects.filter(email=user_modified_email).first()  
-
-#         if not user_modified:
-#             msg = 'User not in record!!'
-#             return Response({"Message": msg}, status=status.HTTP_401_UNAUTHORIZED)
-
-#         if user_modified:
-#             if new_name:
-#                 user_modified.name = new_name
-#             if new_password:
-#                 user_modified.set_password(new_password)
-
-#             user_modified.save()
-#             user_modified_status = True
-#             return Response({'Message' : 'successfully got the user deleted', 'user_modified_status' : user_modified_status}, status=status.HTTP_200_OK) 
+        if not recipient_list:
+            return Response({"Message":"Recipient_list not found!!!!"})
         
-#         return Response({'Message' : 'could not update the user', 'user_modified_status' : user_modified_status}, status=status.HTTP_400_BAD_REQUEST)
- 
+
+        message_list=request.data.get('message_list')
+
+        if not isinstance(message_list, list):
+            return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
+
+        if not message_list:
+            return Response({"Message":"message_list not found!!!!"})
+        
+        messages = []
+        for templates in message_list:
+            if not isinstance(templates, list) or len(templates) == 0:
+                return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
+
+            template_messages = []  # Initialize a list to store messages for current set of templates
+            for template_id in templates:
+                try:
+                    # Fetch message_template object from the database
+                    message_template = MessageTemplate.objects.get(id=template_id)
+
+                    # Retrieve dynamic data from request or provide defaults
+                    date = request.data.get('date', 'Date')  # Default date if not provided
+                    name = request.data.get('name', 'Instagram User')  # Default name if not provided
+                    company_service = request.data.get('company_service', 'Services')  # Default service if not provided
+                    company_name = request.data.get('company_name', 'Company')  # Default company name if not provided
+                    address = request.data.get('address', '')  # Default address if not provided
+
+                    # Replace placeholders in message template with dynamic data
+                    message_content = message_template.template_content.format(
+                        name=name,
+                        company_name=company_name,
+                        company_service=company_service,
+                        date=date,
+                        address=address
+                    )
+
+                    # Add formatted message content to the template_messages list
+                    template_messages.append(message_content)
+
+                except MessageTemplate.DoesNotExist:
+                    return Response({"Message": f"Message template with ID {template_id} does not exist"}, status=404)
+
+            # Append the messages for current templates set to the main messages list
+            messages.append(template_messages)
 
 
 
 
 
+        ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
 
-#---------------------------------Forgot Password by Adil--------------------------------------------------------------------
+        username=ins.username
+        password=ins.password
 
-# class ForgotPasswordView(APIView):
-#     def post(self, request):
-#         email = request.data.get('email')
-#         if not email:
-#             return Response({'Message': 'Please provide the Email'}, status=status.HTTP_400_BAD_REQUEST)
-#         try:
-#             # Check if user exists in records
-#             user = CustomUser.objects.get(email=email)
-#         except CustomUser.DoesNotExist:
-#             # If user is not in records, prompt user to register first
-#             return Response({'Message': 'User not in records. Register first.'}, status=status.HTTP_400_BAD_REQUEST)
+        # print("The messages detail arre as folows: ",messages)
 
-#         # Generate a verification code
-#         verification_code = random.randint(100000, 999999)
-#         user.verification_code = verification_code
-#         user.save()
+        accounts = [
+            {'username': username, 'password': password, 'recipients': recipient_list,
+             'message': messages},
+            {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
+             'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
+                         ["This is the 3 Successfully test", "This is the 4 Successfully test"],
+                         ["This is the third Successfully test"]]}
+        ]
 
-#         # Send verification code via email
-#         send_otp_via_email(email)
+        # print("The account detail is: ",accounts)
 
-#         return Response({'Message': 'Password Reset code sent successfully. Use it to reset your password.'}, status=status.HTTP_200_OK)
+        max_simultaneous_logins = 1  # Set this to the number of simultaneous logins you want
 
-#------------------------------------Forgot Password by Adil---------------------------------------------------------------
-    
+        results = []
+        with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
+            futures = [executor.submit(send_messages, account) for account in accounts]
+            # print("The futures are as follows :",futures)
+            for future in as_completed(futures):
+                results.append(future.result())
+        return JsonResponse({'results': results})
+
+
+#----------------------------------------------------------------Instagram Message View--------------------------------------------------------

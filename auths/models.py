@@ -84,7 +84,7 @@ class CustomUser(AbstractUser,TimeStampModel):
 
 class instagram_accounts(TimeStampModel):
     id = models.BigAutoField(primary_key=True)
-    username = models.EmailField(unique=True)
+    username = models.CharField(unique=True,max_length=250)
     password = models.CharField(max_length=250)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
