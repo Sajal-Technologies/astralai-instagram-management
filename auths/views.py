@@ -1132,7 +1132,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-import undetected_chromedriver as uc
+# import undetected_chromedriver as uc
+from selenium import webdriver
 
 class InstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -1144,7 +1145,8 @@ class InstagramBot:
         self.instagram_account = instagram_account
         self.base_url = 'https://www.instagram.com/'
 
-        options = uc.ChromeOptions()
+        # options = uc.ChromeOptions()
+        options = webdriver.ChromeOptions()
         # options.headless = True
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -1152,7 +1154,8 @@ class InstagramBot:
         options.add_argument('--disable-extensions')
         options.add_argument('--window-size=1200x600')
         options.add_argument('--disable-client-side-phishing-detection')
-        self.bot = uc.Chrome(options=options)
+        # self.bot = uc.Chrome(options=options)
+        self.bot = webdriver.Chrome(options=options)
 
 
         # self.bot = uc.Chrome()
@@ -1428,7 +1431,7 @@ class InstagramBotView(APIView):
 
         # print("The account detail is: ",accounts)
 
-        max_simultaneous_logins = 1  # Set this to the number of simultaneous logins you want
+        max_simultaneous_logins = 5  # Set this to the number of simultaneous logins you want
 
         results = []
         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
