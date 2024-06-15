@@ -1157,7 +1157,7 @@ class InstagramBot:
         options.add_argument('--window-size=1200x600')
         options.add_argument('--disable-client-side-phishing-detection')
 
-        options.binary_location = '/usr/bin/chromedriver' 
+        # options.binary_location = '/usr/bin/chromedriver' 
         # self.bot = uc.Chrome(options=options)
         # self.bot = webdriver.Chrome(options=options)
 
@@ -1173,7 +1173,8 @@ class InstagramBot:
         try:
         
             chromedriver_path = '/usr/bin/chromedriver'
-            self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            self.bot = webdriver.Chrome(options=options)
 
         except Exception as e:
             print(f"The Error in bot is: {str(e)}")
