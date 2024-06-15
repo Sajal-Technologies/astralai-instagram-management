@@ -102,9 +102,10 @@ class Lead(TimeStampModel): # This will take up the .CSV FILE DATA
 
 class Message(TimeStampModel):
     instagram_account = models.ForeignKey(instagram_accounts, on_delete=models.CASCADE)
+    recipient = models.CharField(max_length=250)
     content = models.TextField()
     scheduled_time = models.DateTimeField()
-    sent = models.BooleanField(default=False)
+    sent = models.BooleanField()
     sent_time = models.DateTimeField(null=True, blank=True)
     # Add other fields as necessary
 

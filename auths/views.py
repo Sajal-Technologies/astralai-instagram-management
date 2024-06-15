@@ -1108,8 +1108,8 @@ class GetMessageTemplate(APIView):
 
             return Response({'Message': 'Message Template fetched successfully', "Message_template_data":tmp}, status=status.HTTP_200_OK)
 
-        except Lead.DoesNotExist:
-            return Response({'Message': 'No Message Template found for deletion'}, status=status.HTTP_404_NOT_FOUND)
+        except MessageTemplate.DoesNotExist:
+            return Response({'Message': 'No Message Template found'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
             return Response({"Message":f"Error Occured while fetching Message Template: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1135,13 +1135,27 @@ from selenium.webdriver.common.keys import Keys
 import undetected_chromedriver as uc
 
 class InstagramBot:
-    def __init__(self, username, password, recipients, message):
+    # def __init__(self, username, password, recipients, message):
+    def __init__(self, username, password, recipients, message, instagram_account):
         self.username = username
         self.password = password
         self.recipients = recipients
         self.message = message
+        self.instagram_account = instagram_account
         self.base_url = 'https://www.instagram.com/'
-        self.bot = uc.Chrome()
+
+        options = uc.ChromeOptions()
+        # options.headless = True
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--window-size=1200x600')
+        options.add_argument('--disable-client-side-phishing-detection')
+        self.bot = uc.Chrome(options=options)
+
+
+        # self.bot = uc.Chrome()
         self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
         self.popup_thread.start()
         try:
@@ -1188,8 +1202,6 @@ class InstagramBot:
 
         for recipient, messages in zip(self.recipients, self.message):
             for message in messages:
-                # print("The message in instabot are as folows: ", message)
-                # print("The recipient in instabot are as folows: ", recipient)
                 try:
                     time.sleep(3)
                     try:
@@ -1219,6 +1231,14 @@ class InstagramBot:
                         next_button.click()
                         time.sleep(2)
                     except Exception as e:
+                        Message.objects.create(
+                            instagram_account =self.instagram_account,
+                            recipient=recipient, 
+                            content = message,
+                            scheduled_time = timezone.now(),
+                            sent = False,
+                            sent_time = timezone.now()
+                            )
                         logging.error(f"Error adding recipient {recipient}: {e}")
                         continue
 
@@ -1232,15 +1252,41 @@ class InstagramBot:
                         time.sleep(1)
                         message_area.send_keys(Keys.RETURN)
                         time.sleep(2)
-
+                        mess=Message.objects.create(
+                            instagram_account =self.instagram_account, 
+                            recipient=recipient,
+                            content = message,
+                            scheduled_time = timezone.now(),
+                            sent = True,
+                            sent_time = timezone.now()
+                            )
+                        
+                        mess.sent =True
+                        mess.save()
+                        time.sleep(1)
                     except Exception as e:
                         logging.error(f"Error sending message to {recipient}: {e}")
+                        Message.objects.create(
+                            instagram_account =self.instagram_account, 
+                            recipient=recipient,
+                            content = message,
+                            scheduled_time = timezone.now(),
+                            sent = False,
+                            sent_time = timezone.now()
+                            )
                         continue
                     finally:
                         self.bot.refresh()
                         time.sleep(2)
 
                 except Exception as e:
+                    Message.objects.create(
+                            instagram_account =self.instagram_account, 
+                            recipient=recipient,
+                            content = message,
+                            scheduled_time = timezone.now(),
+                            sent = False,
+                            sent_time = timezone.now())
                     logging.error(f"Error handling message for {recipient}: {e}")
 
     def logout(self):
@@ -1269,8 +1315,12 @@ def send_messages(account):
     password = account['password']
     recipients = account['recipients']
     message = account['message']
+    instagram_account = account['instagram_account']
     try:
-        instagram_bot = InstagramBot(username, password, recipients, message)
+        # instagram_bot = InstagramBot(username, password, recipients, message)
+
+        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
+
         instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
@@ -1358,14 +1408,23 @@ class InstagramBotView(APIView):
 
         # print("The messages detail arre as folows: ",messages)
 
+        # accounts = [
+        #     {'username': username, 'password': password, 'recipients': recipient_list,
+        #      'message': messages},
+        #     # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
+        #     #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
+        #     #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
+        #     #              ["This is the third Successfully test"]]}
+        # ]
+
         accounts = [
-            {'username': username, 'password': password, 'recipients': recipient_list,
-             'message': messages},
+            {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': ins},
             # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
             #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
             #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
             #              ["This is the third Successfully test"]]}
         ]
+
 
         # print("The account detail is: ",accounts)
 
@@ -1381,3 +1440,47 @@ class InstagramBotView(APIView):
 
 
 #----------------------------------------------------------------Instagram Message View--------------------------------------------------------
+
+
+
+
+class GetMessage(APIView):
+    def get(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # temp_id = request.data.get('temp_id')
+
+        # if not temp_id:
+        #     return Response({'Message': 'Template id not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            Mess_obj= Message.objects.filter(instagram_account__user=user)
+
+            if not Mess_obj:
+                return Response({'Message': 'No Message Template found'}, status=status.HTTP_404_NOT_FOUND)
+            mess_lst=[]
+            for mess in Mess_obj:
+            
+                tmp={
+                "Message Template id" : mess.id,
+                "Message instagram account id" : mess.instagram_account.id,
+                "user email" : mess.instagram_account.user.email,
+                "Message content" : mess.content,
+                "Message scheduled_time" : mess.scheduled_time,
+                "Message sent status" : mess.sent,
+                "Message sent_time" : mess.sent_time}
+
+                mess_lst.append(tmp)            
+
+            return Response({'Message': 'Message Data fetched successfully', "Message_data":mess_lst}, status=status.HTTP_200_OK)
+
+        except Message.DoesNotExist:
+            return Response({'Message': 'No Message Record found'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({"Message":f"Error Occured while fetching Message Data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
