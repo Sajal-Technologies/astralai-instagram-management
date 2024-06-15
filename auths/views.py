@@ -1135,6 +1135,7 @@ from selenium.webdriver.common.keys import Keys
 # import undetected_chromedriver as uc
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 class InstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -1158,11 +1159,19 @@ class InstagramBot:
         # self.bot = uc.Chrome(options=options)
         # self.bot = webdriver.Chrome(options=options)
 
+
+        options.add_argument('--headless')
+        options.add_argument('--disable-setuid-sandbox')
+        options.add_argument('--user-data-dir=/tmp/chromium')
+        options.add_argument('--remote-debugging-port=9222')
+
+        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
         # Ensure that the ChromeDriver path is correct
         try:
         
             chromedriver_path = '/usr/bin/chromedriver'
-            self.bot = webdriver.Chrome(service=Service(chromedriver_path), options=options)
+            self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
         except Exception as e:
             print(f"The Error in bot is: {str(e)}")
