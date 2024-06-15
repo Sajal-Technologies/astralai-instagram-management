@@ -70,6 +70,11 @@ urlpatterns = [
     path('api/get-message/', GetMessage.as_view(), name='api-GetMessage'),  
 
 
+    path('api/add-message/', AddMessage.as_view(), name='api-AddMessage'), 
+
+    path('api/delete-message/', deleteMessage.as_view(), name='api-deleteMessage'), 
+
+
     path('api/insta_messages/', InstagramBotView.as_view(), name='api-InstagramBotView'),
 
 ]

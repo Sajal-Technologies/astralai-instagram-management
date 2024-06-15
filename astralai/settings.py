@@ -41,6 +41,10 @@ INSTALLED_APPS = [
     'auths',
     'rest_framework_simplejwt',
     'rest_framework',
+    'django_crontab',
+    'corsheaders',
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -171,3 +175,34 @@ EMAIL_PORT = 465  # Use 465 for SSL/TLS
 EMAIL_USE_SSL = True  # Enable SSL/TLS encryption
 EMAIL_HOST_USER = 'email@email.io'  # Your GoDaddy email address
 EMAIL_HOST_PASSWORD = '@password'  # Your GoDaddy email password
+
+
+
+
+# Celery Broker URL
+#CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+
+# Celery Task Serialization Configuration
+CELERY_ACCEPT_CONTENT = ['application/json']  # Define the accepted content types for tasks
+CELERY_TASK_SERIALIZER = 'json'   # Set the task serializer to JSON
+CELERY_RESULT_SERIALIZER = 'json' # Set the result serializer to JSON
+CELERY_ENABLE_UTC=True
+
+
+
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_TIMEZONE = 'UTC'
+#from home.tasks import find_next_regeneration_datetime
+
+# Run this task periodically to check for images that need regeneration
+CELERY_BEAT_SCHEDULE = {
+    'Find_Next_Regen_Datetime': {
+        'task': 'auths.tasks.find_next_regeneration_datetime',
+        'schedule': 10,  # Execute every 60 seconds (adjust as needed)
+    },
+}
+
+
+CELERY_TASK_TRACK_STARTED=True

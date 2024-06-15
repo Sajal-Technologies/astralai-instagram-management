@@ -1538,3 +1538,83 @@ class GetMessage(APIView):
 
         except Exception as e:
             return Response({"Message":f"Error Occured while fetching Message Data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+from django.utils.dateparse import parse_datetime
+
+class AddMessage(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+        
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        instagram_account_id = request.data.get('instagram_account_id')
+        
+        recipient = request.data.get('recipient')
+        content = request.data.get('content')
+        scheduled_time_str = request.data.get('scheduled_time')
+        print(scheduled_time_str)
+        print(type(scheduled_time_str))
+
+        try:
+            scheduled_time = parse_datetime(scheduled_time_str)
+            if scheduled_time is None:
+                return Response({'Message': 'Invalid scheduled_time format'}, status=status.HTTP_400_BAD_REQUEST)
+            # Ensure the parsed datetime is timezone-aware
+            if timezone.is_naive(scheduled_time):
+                scheduled_time = timezone.make_aware(scheduled_time, timezone.utc)
+        except ValueError:
+            return Response({'Message': 'Invalid scheduled_time format'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        instagram_account = instagram_accounts.objects.get(id=instagram_account_id)
+        sent = False
+
+
+        if not recipient or not instagram_account:
+            return Response({'Message': 'recipient and instagram_account_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not scheduled_time or not content:
+            return Response({'Message': 'scheduled_time and content are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if Message.objects.filter(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent).exists():
+                return Response({'Message': 'Message already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+            else:
+                Message.objects.create(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent)
+                return Response({'Message': 'Message Added Successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'Message': f'Message Template creation Failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class deleteMessage(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "message_id" in request.data or not request.data.get('message_id'):
+            return Response({"Message":"No message_id Found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        message_id = request.data.get('message_id')
+
+        try:
+            mess = Message.objects.get(id=message_id,instagram_account__user=user)
+            mess.delete()
+            return Response({'Message': 'Message Record deleted successfully'},
+                                status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"Message": f"Error Occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
