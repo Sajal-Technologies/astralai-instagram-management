@@ -1168,15 +1168,27 @@ class InstagramBot:
         options.add_argument('--remote-debugging-port=9222')
         print("Options set SUCCESSFULLY")
 
+
+        CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
+        # Check if ChromeDriver exists at the specified path
+        if not os.path.exists(CHROMEDRIVER_PATH):
+            from webdriver_manager.chrome import ChromeDriverManager
+            CHROMEDRIVER_PATH = ChromeDriverManager().install()
+
+        
+
         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
         # Ensure that the ChromeDriver path is correct
         try:
         
             chromedriver_path = '/usr/bin/chromedriver'
+            service = Service(CHROMEDRIVER_PATH)
+            self.bot = webdriver.Chrome(service=service, options=options)
+
             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             # self.bot = webdriver.Chrome(options=options)
-            self.bot = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+            # self.bot = webdriver.Chrome(chromedriver_path, options=options)
 
             print("BOT CREATED SUCCESSFULLY")
 
