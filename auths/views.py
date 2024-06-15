@@ -1175,7 +1175,8 @@ class InstagramBot:
         
             chromedriver_path = '/usr/bin/chromedriver'
             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            self.bot = webdriver.Chrome(options=options)
+            # self.bot = webdriver.Chrome(options=options)
+            self.bot = webdriver.Chrome(executable_path=chromedriver_path, options=options)
 
             print("BOT CREATED SUCCESSFULLY")
 
