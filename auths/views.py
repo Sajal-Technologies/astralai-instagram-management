@@ -1166,6 +1166,7 @@ class InstagramBot:
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
+        print("Options set SUCCESSFULLY")
 
         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
@@ -1176,6 +1177,8 @@ class InstagramBot:
             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             self.bot = webdriver.Chrome(options=options)
 
+            print("BOT CREATED SUCCESSFULLY")
+
         except Exception as e:
             print(f"The Error in bot is: {str(e)}")
 
@@ -1183,8 +1186,11 @@ class InstagramBot:
         # self.bot = uc.Chrome()
         self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
         self.popup_thread.start()
+
+        print("Thread started SUCCESSFULLY")
         try:
             self.login()
+            print("Login SUCCESSFULLY")
         except Exception as e:
             print(f"The error is is --->: {e}")
             logging.error(f"Error during login for {self.username}: {e}")
