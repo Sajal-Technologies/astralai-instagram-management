@@ -1166,6 +1166,7 @@ class InstagramBot:
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
+        logging.basicConfig(level=logging.DEBUG)
         print("Options set SUCCESSFULLY")
 
 
@@ -1180,6 +1181,13 @@ class InstagramBot:
         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
         # Ensure that the ChromeDriver path is correct
+        # try: self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
+
+        #     print("BOT CREATED SUCCESSFULLY") 
+        # except Exception as e: 
+        #     print(f"The Error in bot creation is: {str(e)}")
+
+
         try:
         
             chromedriver_path = '/usr/bin/chromedriver'
