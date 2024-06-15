@@ -1156,6 +1156,8 @@ class InstagramBot:
         options.add_argument('--disable-extensions')
         options.add_argument('--window-size=1200x600')
         options.add_argument('--disable-client-side-phishing-detection')
+
+        options.binary_location = '/usr/bin/chromedriver' 
         # self.bot = uc.Chrome(options=options)
         # self.bot = webdriver.Chrome(options=options)
 
@@ -1183,6 +1185,7 @@ class InstagramBot:
         try:
             self.login()
         except Exception as e:
+            print(f"The error is is --->: {e}")
             logging.error(f"Error during login for {self.username}: {e}")
             self.bot.quit()
 
@@ -1210,6 +1213,7 @@ class InstagramBot:
             enter_password.send_keys(Keys.RETURN)
             time.sleep(5)
         except Exception as e:
+            print(f"The error2222222222222222 --->: {e}")
             logging.error(f"Error entering login credentials: {e}")
             return
 
