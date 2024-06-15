@@ -1159,8 +1159,13 @@ class InstagramBot:
         # self.bot = webdriver.Chrome(options=options)
 
         # Ensure that the ChromeDriver path is correct
-        chromedriver_path = '/usr/bin/chromedriver'
-        self.bot = webdriver.Chrome(service=Service(chromedriver_path), options=options)
+        try:
+        
+            chromedriver_path = '/usr/bin/chromedriver'
+            self.bot = webdriver.Chrome(service=Service(chromedriver_path), options=options)
+
+        except Exception as e:
+            print(f"The Error in bot is: {str(e)}")
 
 
         # self.bot = uc.Chrome()
