@@ -1134,6 +1134,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 # import undetected_chromedriver as uc
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
 class InstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -1155,7 +1156,11 @@ class InstagramBot:
         options.add_argument('--window-size=1200x600')
         options.add_argument('--disable-client-side-phishing-detection')
         # self.bot = uc.Chrome(options=options)
-        self.bot = webdriver.Chrome(options=options)
+        # self.bot = webdriver.Chrome(options=options)
+
+        # Ensure that the ChromeDriver path is correct
+        chromedriver_path = '/usr/bin/chromedriver'
+        self.bot = webdriver.Chrome(service=Service(chromedriver_path), options=options)
 
 
         # self.bot = uc.Chrome()
