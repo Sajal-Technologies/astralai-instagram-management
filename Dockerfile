@@ -33,16 +33,15 @@ COPY . /app/
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run Django migrations
-RUN python manage.py makemigrations auths && python manage.py migrate
+# Copy the entrypoint script
+COPY entrypoint.sh /app/
 
-# Create a superuser if it doesn't already exist
-RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(); \
-if not User.objects.filter(username='admin').exists(): \
-    User.objects.create_superuser(username='admin', email='admin@admin.com', password='admin')" | python manage.py shell
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
 
 # Expose port 8001 for the Django app
 EXPOSE 8001
 
-# Define the default command to run the Django app
+# Use the entrypoint script to start the Django app
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
