@@ -33,6 +33,14 @@ COPY . /app/
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Run Django migrations
+RUN python manage.py makemigrations auths && python manage.py migrate
+
+# Create a superuser if it doesn't already exist
+RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(); \
+if not User.objects.filter(username='admin').exists(): \
+    User.objects.create_superuser(username='admin', email='admin@admin.com', password='admin')" | python manage.py shell
+
 # Expose port 8001 for the Django app
 EXPOSE 8001
 
