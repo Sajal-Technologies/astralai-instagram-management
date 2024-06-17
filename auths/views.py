@@ -1091,20 +1091,28 @@ class GetMessageTemplate(APIView):
         
         temp_id = request.data.get('temp_id')
 
-        if not temp_id:
-            return Response({'Message': 'Template id not found'}, status=status.HTTP_400_BAD_REQUEST)
+        # if not temp_id:
+        #     return Response({'Message': 'Template id not found'}, status=status.HTTP_400_BAD_REQUEST)
+
 
         try:
-            Mess_obj= MessageTemplate.objects.filter(user=user, id= temp_id).first()
+            if temp_id:
+                Mess_obj= MessageTemplate.objects.filter(user=user, id= temp_id)
+            else:
+                Mess_obj= MessageTemplate.objects.filter(user=user)
+
 
             if not Mess_obj:
                 return Response({'Message': 'No Message Template found'}, status=status.HTTP_404_NOT_FOUND)
             
-            tmp={
-            "Message Template id" : Mess_obj.id,
-            "Message Template id" : Mess_obj.user.email,
-            "Message Template id" : Mess_obj.template_name,
-            "Message Template id" : Mess_obj.template_content}
+            tmp = []
+            for mess_obj in Mess_obj:
+                tmp.append({
+                    "Message Template id": mess_obj.id,
+                    "User Email": mess_obj.user.email,
+                    "Template Name": mess_obj.template_name,
+                    "Template Content": mess_obj.template_content
+                })
 
             return Response({'Message': 'Message Template fetched successfully', "Message_template_data":tmp}, status=status.HTTP_200_OK)
 
