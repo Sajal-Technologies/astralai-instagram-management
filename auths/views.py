@@ -1162,7 +1162,7 @@ class InstagramBot:
         # self.bot = webdriver.Chrome(options=options)
 
 
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
@@ -1247,8 +1247,12 @@ class InstagramBot:
 
         time.sleep(3)
         try:
-            self.bot.find_element(By.XPATH,
-                                  '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
+            # self.bot.find_element(By.XPATH,
+            #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
+            
+            self.bot.get("https://www.instagram.com/direct/inbox/")
+
+
             time.sleep(2)
         except Exception as e:
             logging.error(f"Error navigating to message section: {e}")
@@ -1297,12 +1301,33 @@ class InstagramBot:
                         continue
 
                     try:
-                        message_area = WebDriverWait(self.bot, 5).until(
-                            EC.visibility_of_element_located((By.XPATH,
-                                                              '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+                        # message_area = WebDriverWait(self.bot, 5).until(
+                        #     EC.visibility_of_element_located((By.XPATH,
+                        #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+                        #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
+                        # )
+
+                        # message_area = WebDriverWait(self.bot, 5).until(
+                        #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
+                        # )
+
+                        message_area = WebDriverWait(self.bot, 10).until(
+                            EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
                         )
+                     
+                            
+
+
+
+
+
                         time.sleep(3)
+
+
+
+
                         message_area.send_keys(message)
+                        print(message)
                         time.sleep(1)
                         message_area.send_keys(Keys.RETURN)
                         time.sleep(2)

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-=cs@7b8ryk+pg!u7x2@_f@=-j7lg-5$s$(_yqlu3y+^1$#0h5x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['3.210.12.205','127.0.0.1']
+ALLOWED_HOSTS = ['3.210.12.205','127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -41,9 +41,12 @@ INSTALLED_APPS = [
     'auths',
     'rest_framework_simplejwt',
     'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -51,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'astralai.urls'
@@ -81,7 +85,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 600,
     }
+    
 }
 
 
