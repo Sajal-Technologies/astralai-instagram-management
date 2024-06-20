@@ -207,5 +207,13 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+# Configuration for celery-once
+ONCE = {
+    'backend': 'celery_once.backends.Redis',
+    'settings': {
+        'url': CELERY_BROKER_URL,
+        'default_timeout': 60 * 5  # 5 minutes
+    }
+}
 
 CELERY_TASK_TRACK_STARTED=True

@@ -21,6 +21,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import threading
+from celery_once import QueueOnce
 
 
 
@@ -41,8 +42,8 @@ app.conf.update(
 
 
 
-
-@shared_task
+@shared_task(base=QueueOnce, once={'graceful': True})
+# @shared_task
 def send_message(message_id):
     # Define the InstagramBot class here or import it if it's in a different file
     class InstagramBot:
@@ -208,30 +209,38 @@ def send_message(message_id):
                 # new Message Button
                 new_message_button = WebDriverWait(self.bot, 5).until(
                     EC.visibility_of_element_located((By.XPATH,
-                                                      '//div[text()="Send Message"]/parent::button'))
+                    '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
+                                                    #   '//div[text()="Send Message"]/parent::button'))
                 )
                 new_message_button.click()
 
                 # recipient search input
                 recipient_input = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.NAME, 'queryBox'))
+                    # EC.visibility_of_element_located((By.NAME, 'queryBox'))
+                    EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
                 )
                 recipient_input.send_keys(self.recipient)
                 time.sleep(2)
 
                 # recipient first suggestion click
                 recipient_suggestion = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]//div[text()="'+self.recipient+'"]'))
+                    # EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]//div[text()="'+self.recipient+'"]'))
+                    EC.visibility_of_element_located((By.XPATH,
+                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
                 )
                 recipient_suggestion.click()
 
                 next_button = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH, '//button[text()="Next"]'))
+                    # EC.visibility_of_element_located((By.XPATH, '//button[text()="Next"]'))
+                    EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
                 )
                 next_button.click()
 
                 message_area = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.TAG_NAME, 'textarea'))
+                    # EC.visibility_of_element_located((By.TAG_NAME, 'textarea'))
+                    EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+
                 )
                 message_area.send_keys(self.message)
                 message_area.send_keys(Keys.RETURN)
@@ -240,6 +249,7 @@ def send_message(message_id):
                 mess.sent = True
                 mess.sent_time = timezone.now()
                 mess.save()
+                self.bot.refresh()
                 logging.info(f"Message {self.message_id} sent successfully to {self.recipient}")
                 self.close_browser()
 
@@ -279,6 +289,9 @@ def send_message(message_id):
 
     try:
         mess = Message.objects.get(id=message_id)
+        if mess.sent:
+            logger.info(f"Message {message_id} already sent, skipping.")
+            return {'Message': f'Message {message_id} already sent'}
         username = mess.instagram_account.username
         password = mess.instagram_account.password
         recipient = mess.recipient
@@ -291,7 +304,7 @@ def send_message(message_id):
         logger.info(f"Sending message to {recipient}")
 
         # Mark the message as sent
-        mess.opened = True
+        mess.sent = True
         # mess.sent_time = timezone.now()
         mess.save()
 
@@ -342,8 +355,8 @@ def find_next_regeneration_datetime():
         messages_to_send = Message.objects.filter(
             sent=False,
             scheduled_time__gte=time_before,
-            scheduled_time__lte=time_after,
-            opened = False
+            scheduled_time__lte=time_after
+            # opened = False
         )
 
 

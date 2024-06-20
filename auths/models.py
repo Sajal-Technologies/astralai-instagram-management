@@ -107,7 +107,7 @@ class Message(TimeStampModel):
     scheduled_time = models.DateTimeField()
     sent = models.BooleanField()
     sent_time = models.DateTimeField(null=True, blank=True)
-    opened = models.BooleanField(default=False)
+    # opened = models.BooleanField(default=False)
     # Add other fields as necessary
 
 class MessageTemplate(TimeStampModel):
