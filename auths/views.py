@@ -882,10 +882,15 @@ class GetLeaddata(APIView):
         if not user:
             return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
+        insta_id = request.data.get("insta_id")  
 
         try:
             # Find all Lead objects associated with the specified csv_file_number and delete them
-            lead_obj= Lead.objects.filter(instagram_account__user=user)
+            if insta_id:
+                inns = instagram_accounts.objects.get(id=insta_id)
+                lead_obj= Lead.objects.filter(instagram_account__user=user,instagram_account = inns)
+            else:
+                lead_obj= Lead.objects.filter(instagram_account__user=user)
 
             if not lead_obj:
                 return Response({'Message': 'No Lead objects found'}, status=status.HTTP_404_NOT_FOUND)
@@ -896,6 +901,7 @@ class GetLeaddata(APIView):
                 tmp={
 
                     "instagram_account":leads.instagram_account.username,
+                    "Lead ID" : leads.id,
                     "name":leads.name,
                     "username":leads.username,
                     "leads_status":leads.status,
@@ -1318,26 +1324,32 @@ class InstagramBot:
                         # message_area = WebDriverWait(self.bot, 5).until(
                         #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
                         # )
-
+                        time.sleep(2)
                         message_area = WebDriverWait(self.bot, 10).until(
                             EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
                         )
-                     
+
+                        
+                        message_area.click()
                             
 
+                        # message_area.send_keys(f"{message}")
 
 
 
+                        time.sleep(1)
+                        # message_area.send_keys(Keys.ENTER)
+                        # time.sleep(2)
 
-                        time.sleep(3)
 
-
+                        print("The message is prior send message: ",message)
 
 
                         message_area.send_keys(message)
-                        print(message)
+                        print("The message is AFTER send message: ",message)
                         time.sleep(1)
                         message_area.send_keys(Keys.RETURN)
+                        print("The message is AFTER ENTER: ",message)
                         time.sleep(2)
                         mess=Message.objects.create(
                             instagram_account =self.instagram_account, 
@@ -1458,6 +1470,7 @@ class InstagramBotView(APIView):
                 try:
                     # Fetch message_template object from the database
                     message_template = MessageTemplate.objects.get(id=template_id)
+                    print("The message template is as fllows: ",message_template)
 
                     # Retrieve dynamic data from request or provide defaults
                     date = request.data.get('date', 'Date')  # Default date if not provided
@@ -1474,6 +1487,9 @@ class InstagramBotView(APIView):
                         date=date,
                         address=address
                     )
+
+                    print("The message content :",message_content)
+
 
                     # Add formatted message content to the template_messages list
                     template_messages.append(message_content)
@@ -1554,7 +1570,7 @@ class GetMessage(APIView):
             for mess in Mess_obj:
             
                 tmp={
-                "Message Template id" : mess.id,
+                "Message id" : mess.id,
                 "Message instagram account id" : mess.instagram_account.id,
                 "user email" : mess.instagram_account.user.email,
                 "Message content" : mess.content,
@@ -1571,3 +1587,152 @@ class GetMessage(APIView):
 
         except Exception as e:
             return Response({"Message":f"Error Occured while fetching Message Data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+from django.utils.dateparse import parse_datetime
+
+class AddMessage(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+        
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        instagram_account_id = request.data.get('instagram_account_id')
+        
+        recipient = request.data.get('recipient')
+        content = request.data.get('content')
+        scheduled_time_str = request.data.get('scheduled_time')
+        # print(scheduled_time_str)
+        # print(type(scheduled_time_str))
+
+        try:
+            scheduled_time = parse_datetime(scheduled_time_str)
+            if scheduled_time is None:
+                return Response({'Message': 'Invalid scheduled_time format'}, status=status.HTTP_400_BAD_REQUEST)
+            # Ensure the parsed datetime is timezone-aware
+            if timezone.is_naive(scheduled_time):
+                scheduled_time = timezone.make_aware(scheduled_time, timezone.utc)
+        except ValueError:
+            return Response({'Message': 'Invalid scheduled_time format'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        instagram_account = instagram_accounts.objects.get(id=instagram_account_id)
+        sent = False
+
+        if not recipient or not instagram_account:
+            return Response({'Message': 'recipient and instagram_account_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not scheduled_time or not content:
+            return Response({'Message': 'scheduled_time and content are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if Message.objects.filter(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent).exists():
+                return Response({'Message': 'Message already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+            else:
+                Message.objects.create(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent)
+                return Response({'Message': 'Message Added Successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'Message': f'Message Template creation Failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class deleteMessage(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "message_id" in request.data or not request.data.get('message_id'):
+            return Response({"Message":"No message_id Found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        message_id = request.data.get('message_id')
+
+        try:
+            mess = Message.objects.get(id=message_id,instagram_account__user=user)
+            mess.delete()
+            return Response({'Message': 'Message Record deleted successfully'},
+                                status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"Message": f"Error Occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class GetMessagewithtime(APIView):
+    def get(self, request, format=None):
+        # Get user ID from token
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Retrieve time_before and time_after from request data
+        # time_before_str = request.data.get("time_before")
+        # time_after_str = request.data.get("time_after")
+
+        # if not time_before_str or not time_after_str:
+        #     return Response({"Message": "time_before and time_after are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        time_before_str = str(now - timedelta(hours=1))
+        time_after_str = str(now + timedelta(hours=1))
+
+        # print(now)
+        # print(ttime_after)
+        # print(ttime_before)
+
+        try:
+            # Parse ISO 8601 strings to datetime objects
+            time_before = datetime.fromisoformat(time_before_str)
+            time_after = datetime.fromisoformat(time_after_str)
+
+            # Ensure time_before and time_after are in UTC
+            if time_before.tzinfo is None or time_before.tzinfo.utcoffset(time_before) is None:
+                time_before = timezone.make_aware(time_before, timezone.utc)
+            if time_after.tzinfo is None or time_after.tzinfo.utcoffset(time_after) is None:
+                time_after = timezone.make_aware(time_after, timezone.utc)
+
+            # Query messages within the specified time range
+            messages = Message.objects.filter(
+                instagram_account__user=user,
+                sent=False,
+                scheduled_time__gte=time_before,
+                scheduled_time__lte=time_after
+            )
+
+            if not messages:
+                return Response({'Message': 'No Message Templates found within the specified time range'}, status=status.HTTP_404_NOT_FOUND)
+
+            message_data = []
+            for message in messages:
+                message_info = {
+                    "Message id": message.id,
+                    "Message instagram account id": message.instagram_account.id,
+                    "user email": message.instagram_account.user.email,
+                    "Message content": message.content,
+                    "Message scheduled_time": message.scheduled_time.isoformat() if message.scheduled_time else None,
+                    "Message sent status": message.sent,
+                    "Message sent_time": message.sent_time.isoformat() if message.sent_time else None
+                }
+                message_data.append(message_info)
+
+            return Response({
+                "Message": "Message Data fetched successfully",
+                "Message_data": message_data
+            }, status=status.HTTP_200_OK)
+
+        except ValueError:
+            return Response({"Message": "Invalid datetime format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"Message": f"Error Occurred while fetching Message Data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -67,9 +67,14 @@ urlpatterns = [
     path('api/get-message-template/', GetMessageTemplate.as_view(), name='api-GetMessageTemplate'),  
 
 
-    path('api/get-message/', GetMessage.as_view(), name='api-GetMessage'),  
+    path('api/get-message/', GetMessage.as_view(), name='api-GetMessage'), 
 
+    path('api/get-message-time/', GetMessagewithtime.as_view(), name='api-GetMessagewithtime'),  
 
     path('api/insta_messages/', InstagramBotView.as_view(), name='api-InstagramBotView'),
+
+    path('api/add-message/', AddMessage.as_view(), name='api-AddMessage'), 
+
+    path('api/delete-message/', deleteMessage.as_view(), name='api-deleteMessage'), 
 
 ]

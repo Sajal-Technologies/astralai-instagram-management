@@ -19,12 +19,18 @@ class instagram_accountsAdmin(admin.ModelAdmin):
     list_display = ['id', 'username', 'password', 'created', 'updated']
 
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'username', 'status', 'csv_file_number', 'updated']
+    list_display = ['id', 'instagram_account', 'name', 'username', 'status', 'csv_file_number', 'updated']
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'recipient', 'instagram_account', 'content', 'scheduled_time', 'sent', 'sent_time']
+
+class MessageTemplateAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'template_name']
 
 
 admin.site.register(Lead,LeadAdmin)
-admin.site.register(Message)
-admin.site.register(MessageTemplate)
+admin.site.register(Message,MessageAdmin)
+admin.site.register(MessageTemplate,MessageTemplateAdmin)
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
