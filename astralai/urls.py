@@ -77,4 +77,6 @@ urlpatterns = [
 
     path('api/delete-message/', deleteMessage.as_view(), name='api-deleteMessage'), 
 
+    path('api/single-insta-messages/', SingleInstaMessageView.as_view(), name='api-SingleInstaMessageView'),
+
 ]

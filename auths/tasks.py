@@ -213,7 +213,7 @@ def send_message(message_id):
                                                     #   '//div[text()="Send Message"]/parent::button'))
                 )
                 new_message_button.click()
-
+                print("Clicked NEW MASSAGE BUTTON")
                 # recipient search input
                 recipient_input = WebDriverWait(self.bot, 5).until(
                     # EC.visibility_of_element_located((By.NAME, 'queryBox'))
@@ -222,15 +222,16 @@ def send_message(message_id):
                 )
                 recipient_input.send_keys(self.recipient)
                 time.sleep(2)
+                print("ENTERED RECIPIENT NAME")
 
                 # recipient first suggestion click
-                recipient_suggestion = WebDriverWait(self.bot, 5).until(
+                recipient_suggestion = WebDriverWait(self.bot, 7).until(
                     # EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]//div[text()="'+self.recipient+'"]'))
                     EC.visibility_of_element_located((By.XPATH,
                                                               '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
                 )
                 recipient_suggestion.click()
-
+                print("RECIPIENT Suggestion")
                 next_button = WebDriverWait(self.bot, 5).until(
                     # EC.visibility_of_element_located((By.XPATH, '//button[text()="Next"]'))
                     EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
