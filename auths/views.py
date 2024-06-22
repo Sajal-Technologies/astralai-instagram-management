@@ -1153,12 +1153,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 class InstagramBot:
     # def __init__(self, username, password, recipients, message):
-    def __init__(self, username, password, recipients, message, instagram_account):
+    def __init__(self, username, password, recipients, message, instagram_account, task):
         self.username = username
         self.password = password
         self.recipients = recipients
         self.message = message
         self.instagram_account = instagram_account
+        self.task = task
         self.base_url = 'https://www.instagram.com/'
 
         # options = uc.ChromeOptions()
@@ -1272,6 +1273,9 @@ class InstagramBot:
             logging.error(f"Error navigating to message section: {e}")
             return
 
+        self.task.status = 'in_progress'
+        self.task.save()
+
         for recipient, messages in zip(self.recipients, self.message):
             for message in messages:
                 try:
@@ -1309,7 +1313,8 @@ class InstagramBot:
                             content = message,
                             scheduled_time = timezone.now(),
                             sent = False,
-                            sent_time = timezone.now()
+                            sent_time = timezone.now(),
+                            error = f"Error adding recipient {recipient}: {e}"
                             )
                         logging.error(f"Error adding recipient {recipient}: {e}")
                         continue
@@ -1362,6 +1367,8 @@ class InstagramBot:
                         
                         mess.sent =True
                         mess.save()
+                        self.task.sent_messages += 1
+                        self.task.save()
                         time.sleep(1)
                     except Exception as e:
                         logging.error(f"Error sending message to {recipient}: {e}")
@@ -1371,8 +1378,11 @@ class InstagramBot:
                             content = message,
                             scheduled_time = timezone.now(),
                             sent = False,
-                            sent_time = timezone.now()
+                            sent_time = timezone.now(),
+                            error = f"Error sending message to {recipient}: {e}"
                             )
+                        self.task.failed_messages += 1
+                        self.task.save()
                         continue
                     finally:
                         self.bot.refresh()
@@ -1385,13 +1395,16 @@ class InstagramBot:
                             content = message,
                             scheduled_time = timezone.now(),
                             sent = False,
-                            sent_time = timezone.now())
+                            sent_time = timezone.now(),
+                            error = f"Error handling message for {recipient}: {e}")
                     logging.error(f"Error handling message for {recipient}: {e}")
 
-                minute_ = random.randint(2, 5)
+                minute_ = random.randint(1, 4)
                 print(f"Sleeping for {minute_} minutes...")
                 time.sleep(minute_ * 60)
                 print("Awake now!")
+        self.task.status = 'completed'
+        self.task.save()
 
     def logout(self):
         try:
@@ -1420,15 +1433,20 @@ def send_messages(account):
     recipients = account['recipients']
     message = account['message']
     instagram_account = account['instagram_account']
+    task = account['task']
     try:
         # instagram_bot = InstagramBot(username, password, recipients, message)
 
-        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
+        # instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
+        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task)
 
         instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
+        task.status = 'failed'
+        task.error_message = str(e)
+        task.save()
         return f"Failed to send messages from {username}"
 
 from django.views.decorators.csrf import csrf_exempt
@@ -1465,6 +1483,28 @@ class InstagramBotView(APIView):
         if not message_list:
             return Response({"Message":"message_list not found!!!!"})
         
+
+        ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+
+        total_messages = sum(len(messages) for messages in message_list)
+
+        task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
+
+
+        response_data = {'task_id': task.id}
+
+        # Process messages in background
+        executor = ThreadPoolExecutor(max_workers=1)
+        executor.submit(self.process_messages, request.data, ins, task)
+
+        return JsonResponse(response_data)
+
+
+    def process_messages(self, data, instagram_account, task):
+        
+        message_list=data.get('message_list')
+        recipient_list=data.get('recipient_list')
+
         messages = []
         for templates in message_list:
             if not isinstance(templates, list) or len(templates) == 0:
@@ -1478,11 +1518,11 @@ class InstagramBotView(APIView):
                     print("The message template is as fllows: ",message_template)
 
                     # Retrieve dynamic data from request or provide defaults
-                    date = request.data.get('date', 'Date')  # Default date if not provided
-                    name = request.data.get('name', 'Instagram User')  # Default name if not provided
-                    company_service = request.data.get('company_service', 'Services')  # Default service if not provided
-                    company_name = request.data.get('company_name', 'Company')  # Default company name if not provided
-                    address = request.data.get('address', '')  # Default address if not provided
+                    date = data.get('date', 'Date')  # Default date if not provided
+                    name = data.get('name', 'Instagram User')  # Default name if not provided
+                    company_service = data.get('company_service', 'Services')  # Default service if not provided
+                    company_name = data.get('company_name', 'Company')  # Default company name if not provided
+                    address = data.get('address', '')  # Default address if not provided
 
                     # Replace placeholders in message template with dynamic data
                     message_content = message_template.template_content.format(
@@ -1509,10 +1549,14 @@ class InstagramBotView(APIView):
 
 
 
-        ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+        # ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
 
-        username=ins.username
-        password=ins.password
+        # total_messages = sum(len(messages) for messages in message_list)
+
+        # task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
+
+        username=instagram_account.username
+        password=instagram_account.password
 
         # print("The messages detail arre as folows: ",messages)
 
@@ -1526,7 +1570,7 @@ class InstagramBotView(APIView):
         # ]
 
         accounts = [
-            {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': ins},
+            {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task},
             # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
             #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
             #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
@@ -1544,7 +1588,11 @@ class InstagramBotView(APIView):
             # print("The futures are as follows :",futures)
             for future in as_completed(futures):
                 results.append(future.result())
-        return JsonResponse({'results': results})
+
+        task.status = 'completed'
+        task.save()
+        # return JsonResponse({'results': results})
+        # return JsonResponse({'results': results, 'task_id': task.id})
 
 
 #----------------------------------------------------------------Instagram Message View--------------------------------------------------------
@@ -1992,7 +2040,8 @@ class SingleInstagramBot:
                     content = message,
                     scheduled_time = timezone.now(),
                     sent = False,
-                    sent_time = timezone.now()
+                    sent_time = timezone.now(),
+                    error = f"Error adding recipient {recipient}: {e}"
                     )
                 logging.error(f"Error adding recipient {recipient}: {e}")
                 
@@ -2054,7 +2103,8 @@ class SingleInstagramBot:
                     content = message,
                     scheduled_time = timezone.now(),
                     sent = False,
-                    sent_time = timezone.now()
+                    sent_time = timezone.now(),
+                    error = f"Error sending message to {recipient}: {e}"
                     )
                 
             finally:
@@ -2068,7 +2118,8 @@ class SingleInstagramBot:
                     content = message,
                     scheduled_time = timezone.now(),
                     sent = False,
-                    sent_time = timezone.now())
+                    sent_time = timezone.now(),
+                    error = f"Error handling message for {recipient}: {e}")
             logging.error(f"Error handling message for {recipient}: {e}")
 
     def logout(self):
@@ -2108,3 +2159,30 @@ def single_send_messages(account):
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
         return f"Failed to send messages from {username}"
+    
+
+
+class TaskStatusView(APIView):
+    def get(self, request):
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+        
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        task_id = request.data.get("task_id")
+        if not task_id:
+            return Response({"Message":"No Task Id Received"})
+
+        try:
+            task = Task.objects.get(id=task_id,instagram_account__user=user)
+            return Response({
+                'task_id': task.id,
+                'total_messages': task.total_messages,
+                'sent_messages': task.sent_messages,
+                'failed_messages': task.failed_messages,
+                'status': task.status,
+                'error_message': task.error_message,
+            })
+        except Task.DoesNotExist:
+            return Response({"Message": "Task not found"}, status=404)

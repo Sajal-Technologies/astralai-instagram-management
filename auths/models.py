@@ -107,8 +107,21 @@ class Message(TimeStampModel):
     scheduled_time = models.DateTimeField()
     sent = models.BooleanField()
     sent_time = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(null=True, blank=True)
     # opened = models.BooleanField(default=False)
     # Add other fields as necessary
+
+class Task(TimeStampModel):
+    instagram_account = models.ForeignKey(instagram_accounts, on_delete=models.CASCADE)
+    total_messages = models.IntegerField(default=0)
+    sent_messages = models.IntegerField(default=0)
+    failed_messages = models.IntegerField(default=0)
+    status = models.CharField(max_length=50, default='pending')  # pending, in_progress, completed, failed
+    # created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
+    error_message = models.TextField(null=True, blank=True)
+
+
 
 class MessageTemplate(TimeStampModel):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

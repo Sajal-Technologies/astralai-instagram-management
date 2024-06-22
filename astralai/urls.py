@@ -79,4 +79,6 @@ urlpatterns = [
 
     path('api/single-insta-messages/', SingleInstaMessageView.as_view(), name='api-SingleInstaMessageView'),
 
+    path('api/task_status/', TaskStatusView.as_view(), name='api-TaskStatusView'),
+
 ]
