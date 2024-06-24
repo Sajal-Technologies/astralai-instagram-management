@@ -9,7 +9,7 @@ from django.http import JsonResponse
 import logging
 
 
-from auths.models import Message
+from auths.models import Message, Task
 import os
 from django.utils import timezone
 from selenium.webdriver.common.by import By
@@ -250,6 +250,10 @@ def send_message(message_id):
                 mess.sent = True
                 mess.sent_time = timezone.now()
                 mess.save()
+                tsk = Task.objects.get(message = mess)
+                tsk.sent_messages+=1
+                tsk.status = "completed"
+                tsk.save()
                 self.bot.refresh()
                 logging.info(f"Message {self.message_id} sent successfully to {self.recipient}")
                 self.close_browser()
@@ -259,6 +263,11 @@ def send_message(message_id):
                 mess.sent = False
                 # mess.sent_time = None
                 mess.save()
+                tsk = Task.objects.get(message = mess)
+                tsk.failed_messages+=1
+                tsk.status = "failed"
+                tsk.error_message = f"Error sending message to {self.recipient}: {e}"
+                tsk.save()
                 logging.error(f"Error sending message to {self.recipient}: {e}")
                 self.close_browser()
 
@@ -291,6 +300,10 @@ def send_message(message_id):
     try:
         mess = Message.objects.get(id=message_id)
         if mess.sent:
+            tsk = Task.objects.get(message = mess)
+            tsk.sent_messages+=1
+            tsk.status = "completed"
+            tsk.save()
             logger.info(f"Message {message_id} already sent, skipping.")
             return {'Message': f'Message {message_id} already sent'}
         username = mess.instagram_account.username

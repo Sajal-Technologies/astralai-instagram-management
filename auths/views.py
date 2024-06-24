@@ -1285,7 +1285,20 @@ class InstagramBot:
         except Exception as e:
             print(f"The error2222222222222222 --->: {e}")
             logging.error(f"Error entering login credentials: {e}")
-            return
+            mess=Message.objects.create(
+                        instagram_account =self.instagram_account,
+                        recipient=recipient, 
+                        content = self.message,
+                        scheduled_time = timezone.now(),
+                        sent = False,
+                        sent_time = timezone.now(),
+                        error = f"Error entering login credentials: {e}"
+                        )
+            self.task.message.add(mess)
+            # self.task.failed_messages += 1
+            self.task.save()
+            self.bot.quit()
+            return #############################################Break
 
         time.sleep(3)
         try:
@@ -1303,133 +1316,148 @@ class InstagramBot:
         self.task.status = 'in_progress'
         self.task.save()
 
-        for recipient, messages in zip(self.recipients, self.message):
-            for message in messages:
+        # for recipient in self.recipients:
+        for recipient, message in zip(self.recipients,self.message):
+            print("The size of message are:================================================== ",len(self.message))
+            print(self.message)
+
+            print("The size of recipient are: ==================================================",len(self.recipients))
+            print(self.recipients)
+        # for message in messages:
+
+            try:
+                time.sleep(3)
                 try:
-                    time.sleep(3)
-                    try:
-                        new_message_button = WebDriverWait(self.bot, 5).until(
-                            EC.visibility_of_element_located((By.XPATH,
-                                                              '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
-                        )
-                        new_message_button.click()
-                        time.sleep(2)
-                        recipient_input = WebDriverWait(self.bot, 5).until(
-                            EC.visibility_of_element_located((By.XPATH,
-                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
-                        )
-                        recipient_input.send_keys(recipient)
-                        time.sleep(2)
+                    new_message_button = WebDriverWait(self.bot, 5).until(
+                        EC.visibility_of_element_located((By.XPATH,
+                                                            '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
+                    )
+                    new_message_button.click()
+                    time.sleep(2)
+                    recipient_input = WebDriverWait(self.bot, 5).until(
+                        EC.visibility_of_element_located((By.XPATH,
+                                                            '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
+                    )
+                    recipient_input.send_keys(recipient)
+                    time.sleep(2)
 
-                        recipient_suggestion = WebDriverWait(self.bot, 5).until(
-                            EC.visibility_of_element_located((By.XPATH,
-                                                              '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
-                        )
-                        recipient_suggestion.click()
-                        time.sleep(2)
+                    recipient_suggestion = WebDriverWait(self.bot, 5).until(
+                        EC.visibility_of_element_located((By.XPATH,
+                                                            '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
+                    )
+                    recipient_suggestion.click()
+                    time.sleep(2)
 
-                        next_button = WebDriverWait(self.bot, 5).until(
-                            EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
-                        )
-                        next_button.click()
-                        time.sleep(2)
-                    except Exception as e:
-                        Message.objects.create(
-                            instagram_account =self.instagram_account,
-                            recipient=recipient, 
-                            content = message,
-                            scheduled_time = timezone.now(),
-                            sent = False,
-                            sent_time = timezone.now(),
-                            error = f"Error adding recipient {recipient}: {e}"
-                            )
-                        logging.error(f"Error adding recipient {recipient}: {e}")
-                        continue
-
-                    try:
-                        # message_area = WebDriverWait(self.bot, 5).until(
-                        #     EC.visibility_of_element_located((By.XPATH,
-                        #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
-                        #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
-                        # )
-
-                        # message_area = WebDriverWait(self.bot, 5).until(
-                        #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
-                        # )
-                        time.sleep(2)
-                        message_area = WebDriverWait(self.bot, 10).until(
-                            EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
-                        )
-
-                        
-                        message_area.click()
-                            
-
-                        # message_area.send_keys(f"{message}")
-
-
-
-                        time.sleep(1)
-                        # message_area.send_keys(Keys.ENTER)
-                        # time.sleep(2)
-
-
-                        print("The message is prior send message: ",message)
-
-
-                        message_area.send_keys(message)
-                        print("The message is AFTER send message: ",message)
-                        time.sleep(1)
-                        message_area.send_keys(Keys.RETURN)
-                        print("The message is AFTER ENTER: ",message)
-                        time.sleep(2)
-                        mess=Message.objects.create(
-                            instagram_account =self.instagram_account, 
-                            recipient=recipient,
-                            content = message,
-                            scheduled_time = timezone.now(),
-                            sent = True,
-                            sent_time = timezone.now()
-                            )
-                        
-                        mess.sent =True
-                        mess.save()
-                        self.task.sent_messages += 1
-                        self.task.save()
-                        time.sleep(1)
-                    except Exception as e:
-                        logging.error(f"Error sending message to {recipient}: {e}")
-                        Message.objects.create(
-                            instagram_account =self.instagram_account, 
-                            recipient=recipient,
-                            content = message,
-                            scheduled_time = timezone.now(),
-                            sent = False,
-                            sent_time = timezone.now(),
-                            error = f"Error sending message to {recipient}: {e}"
-                            )
-                        self.task.failed_messages += 1
-                        self.task.save()
-                        continue
-                    finally:
-                        self.bot.refresh()
-                        time.sleep(2)
-
+                    next_button = WebDriverWait(self.bot, 5).until(
+                        EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
+                    )
+                    next_button.click()
+                    time.sleep(2)
                 except Exception as e:
-                    Message.objects.create(
-                            instagram_account =self.instagram_account, 
-                            recipient=recipient,
-                            content = message,
-                            scheduled_time = timezone.now(),
-                            sent = False,
-                            sent_time = timezone.now(),
-                            error = f"Error handling message for {recipient}: {e}")
-                    logging.error(f"Error handling message for {recipient}: {e}")
+                    mess=Message.objects.create(
+                        instagram_account =self.instagram_account,
+                        recipient=recipient, 
+                        content = message,
+                        scheduled_time = timezone.now(),
+                        sent = False,
+                        sent_time = timezone.now(),
+                        error = f"Error adding recipient {recipient}: {e}"
+                        )
+                    self.task.message.add(mess)
+                    # self.task.failed_messages += 1
+                    self.task.save()
+                    logging.error(f"Error adding recipient {recipient}: {e}")
+                    continue
 
-                minute_ = random.randint(1, 4)
-                print(f"Sleeping for {minute_} minutes...")
-                time.sleep(minute_ * 60)
-                print("Awake now!")
+                try:
+                    # message_area = WebDriverWait(self.bot, 5).until(
+                    #     EC.visibility_of_element_located((By.XPATH,
+                    #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+                    #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
+                    # )
+
+                    # message_area = WebDriverWait(self.bot, 5).until(
+                    #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
+                    # )
+                    time.sleep(2)
+                    message_area = WebDriverWait(self.bot, 10).until(
+                        EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+                    )
+
+                    
+                    message_area.click()
+                        
+
+                    # message_area.send_keys(f"{message}")
+
+
+
+                    time.sleep(1)
+                    # message_area.send_keys(Keys.ENTER)
+                    # time.sleep(2)
+
+
+                    print("The message is prior send message: ",message)
+
+
+                    message_area.send_keys(message)
+                    print("The message is AFTER send message: ",message)
+                    time.sleep(1)
+                    message_area.send_keys(Keys.RETURN)
+                    print("The message is AFTER ENTER: ",message)
+                    time.sleep(2)
+                    mess=Message.objects.create(
+                        instagram_account =self.instagram_account, 
+                        recipient=recipient,
+                        content = message,
+                        scheduled_time = timezone.now(),
+                        sent = True,
+                        sent_time = timezone.now()
+                        )
+                    
+                    mess.sent =True
+                    mess.save()
+                    self.task.sent_messages += 1
+                    self.task.message.add(mess)
+                    self.task.save()
+                    time.sleep(1)
+                except Exception as e:
+                    logging.error(f"Error sending message to {recipient}: {e}")
+                    mess=Message.objects.create(
+                        instagram_account =self.instagram_account, 
+                        recipient=recipient,
+                        content = message,
+                        scheduled_time = timezone.now(),
+                        sent = False,
+                        sent_time = timezone.now(),
+                        error = f"Error sending message to {recipient}: {e}"
+                        )
+                    self.task.message.add(mess)
+                    self.task.failed_messages += 1
+                    self.task.save()
+                    continue
+                finally:
+                    self.bot.refresh()
+                    time.sleep(2)
+
+            except Exception as e:
+                mess=Message.objects.create(
+                        instagram_account =self.instagram_account, 
+                        recipient=recipient,
+                        content = message,
+                        scheduled_time = timezone.now(),
+                        sent = False,
+                        sent_time = timezone.now(),
+                        error = f"Error handling message for {recipient}: {e}")
+                logging.error(f"Error handling message for {recipient}: {e}")
+
+                self.task.message.add(mess)
+                self.task.save()
+
+            minute_ = random.randint(1, 4)
+            print(f"Sleeping for {minute_} minutes...")
+            time.sleep(minute_ * 60)
+            print("Awake now!")
         self.task.status = 'completed'
         self.task.save()
 
@@ -1538,47 +1566,65 @@ class InstagramBotView(APIView):
         if not custom_message:
 
             messages = []
-            for templates in message_list:
-                if not isinstance(templates, list) or len(templates) == 0:
-                    return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
 
-                template_messages = []  # Initialize a list to store messages for current set of templates
-                for template_id in templates:
-                    try:
-                        # Fetch message_template object from the database
-                        message_template = MessageTemplate.objects.get(id=template_id)
-                        print("The message template is as fllows: ",message_template)
+            date = data.get('date', 'Date')  # Default date if not provided
+            name = data.get('name', 'Instagram User')  # Default name if not provided
+            # company_service = data.get('company_service', 'Services')  # Default service if not provided
+            username = data.get('username', 'username_not_provided')
+            # for templates in message_list:
+            #     if not isinstance(templates, list) or len(templates) == 0:
+            #         return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
 
-                        # Retrieve dynamic data from request or provide defaults
-                        date = data.get('date', 'Date')  # Default date if not provided
-                        name = data.get('name', 'Instagram User')  # Default name if not provided
-                        # company_service = data.get('company_service', 'Services')  # Default service if not provided
-                        username = data.get('username', 'username_not_provided')  # Default company name if not provided
-                        # address = data.get('address', '')  # Default address if not provided
+            template_messages = []  # Initialize a list to store messages for current set of templates
+            for i in range(len(name)):
+                try:
+                    # Fetch message_template object from the database
+                    message_template = MessageTemplate.objects.get(id=message_list)
+                    print("The message template is as fllows: ",message_template)
 
-                        # Replace placeholders in message template with dynamic data
-                        message_content = message_template.template_content.format(
-                            name=name,
-                            username=username,
-                            # company_service=company_service,
-                            date=date,
-                            # address=address
-                        )
+                    # Retrieve dynamic data from request or provide defaults
+                    # date = data.get('date', 'Date')  # Default date if not provided
+                    # name = data.get('name', 'Instagram User')  # Default name if not provided
+                    # # company_service = data.get('company_service', 'Services')  # Default service if not provided
+                    # username = data.get('username', 'username_not_provided')  # Default company name if not provided
+                    # # address = data.get('address', '')  # Default address if not provided
 
-                        print("The message content :",message_content)
+                    # Replace placeholders in message template with dynamic data
+                    message_content = message_template.template_content.format(
+                        name=name[i],
+                        username=username[i],
+                        # company_service=company_service,
+                        date=date,
+                        # address=address
+                    )
+
+                    print("The message content :",message_content)
 
 
-                        # Add formatted message content to the template_messages list
-                        template_messages.append(message_content)
+                    # Add formatted message content to the template_messages list
+                    template_messages.append(message_content)
 
-                    except MessageTemplate.DoesNotExist:
-                        return Response({"Message": f"Message template with ID {template_id} does not exist"}, status=404)
+                except MessageTemplate.DoesNotExist:
+                    return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
 
-                # Append the messages for current templates set to the main messages list
-                messages.append(template_messages)
+            # Append the messages for current templates set to the main messages list
+            messages.append(template_messages)
         
         else:
-            messages = custom_message
+            for i in range(len(name)):
+                messages=[]
+                try:
+                    messages_ = str(custom_message).format(
+                        name=name[i],
+                        username=username[i],
+                        # company_service=company_service,
+                        date=date,
+                        # address=address
+                    )
+                    messages.append(messages_)
+                except:
+                    messages.append(custom_message)
+                    
 
 
 
@@ -1773,8 +1819,10 @@ class AddMessage(APIView):
                 return Response({'Message': 'Message already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
-                Message.objects.create(instagram_account =instagram_account, recipient=recipient[0], content=content, scheduled_time=scheduled_time, sent=sent)
-                return Response({'Message': 'Message Added Successfully'}, status=status.HTTP_201_CREATED)
+                total_messages = len(message_template)
+                mess = Message.objects.create(instagram_account =instagram_account, recipient=recipient[0], content=content, scheduled_time=scheduled_time, sent=sent)
+                task = Task.objects.create(instagram_account=instagram_account, total_messages=total_messages, message=mess)
+                return Response({'Message': 'Message Added Successfully',"Task_id":task.id}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'Message': f'Message creation Failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
