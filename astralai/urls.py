@@ -40,6 +40,8 @@ urlpatterns = [
 
     path('api/admin/analytics/', AdminAnalytics.as_view(), name='admin-AdminAnalytics'),
 
+    path('api/admin-task-status/', AdminTaskStatusView.as_view(), name='api-AdminTaskStatusView'),
+
 
     path('api/get-insta-account/', GetInstagramAccounts.as_view(), name='api-GetInstagramAccounts'), 
     path('api/add-insta-account/', AddInstagramAccount.as_view(), name='api-AddInstagramAccount'), 
@@ -66,6 +68,8 @@ urlpatterns = [
 
     path('api/get-message-template/', GetMessageTemplate.as_view(), name='api-GetMessageTemplate'),  
 
+    path('api/delete-message-template/', deleteMessageTemplate.as_view(), name='api-deleteMessageTemplate'),  
+
 
     path('api/get-message/', GetMessage.as_view(), name='api-GetMessage'), 
 
@@ -79,6 +83,8 @@ urlpatterns = [
 
     path('api/single-insta-messages/', SingleInstaMessageView.as_view(), name='api-SingleInstaMessageView'),
 
-    path('api/task_status/', TaskStatusView.as_view(), name='api-TaskStatusView'),
+    path('api/task-status/', TaskStatusView.as_view(), name='api-TaskStatusView'),
+
+    path('api/task-status-username/', TaskStatusbyUsername.as_view(), name='api-TaskStatusbyUsername'),
 
 ]

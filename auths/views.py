@@ -1127,6 +1127,33 @@ class GetMessageTemplate(APIView):
 
         except Exception as e:
             return Response({"Message":f"Error Occured while fetching Message Template: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class deleteMessageTemplate(APIView):
+    def post(self, request, format=None):
+
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not "template_id" in request.data or not request.data.get('template_id'):
+            return Response({"Message":"No template_id Found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        template_id = request.data.get('template_id')
+
+        try:
+            temp = MessageTemplate.objects.get(id=template_id,user=user)
+            temp.delete()
+            return Response({'Message': 'Template deleted successfully'},
+                                status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"Message": f"Error Occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 #----------------------------------------------------------------Message Template-------------------------------------------------
 
@@ -1474,19 +1501,21 @@ class InstagramBotView(APIView):
         if not recipient_list:
             return Response({"Message":"Recipient_list not found!!!!"})
         
-
+        custom_message = request.data.get("custom_message")
         message_list=request.data.get('message_list')
 
-        if not isinstance(message_list, list):
-            return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
+        # if not isinstance(message_list, list):
+        #     return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
 
-        if not message_list:
-            return Response({"Message":"message_list not found!!!!"})
+        # if not message_list:
+        #     return Response({"Message":"message_list not found!!!!"})
         
 
         ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
 
-        total_messages = sum(len(messages) for messages in message_list)
+        # total_messages = sum(len(messages) for messages in message_list)
+
+        total_messages = len(recipient_list)
 
         task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
 
@@ -1504,46 +1533,52 @@ class InstagramBotView(APIView):
         
         message_list=data.get('message_list')
         recipient_list=data.get('recipient_list')
+        custom_message = data.get("custom_message")
 
-        messages = []
-        for templates in message_list:
-            if not isinstance(templates, list) or len(templates) == 0:
-                return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
+        if not custom_message:
 
-            template_messages = []  # Initialize a list to store messages for current set of templates
-            for template_id in templates:
-                try:
-                    # Fetch message_template object from the database
-                    message_template = MessageTemplate.objects.get(id=template_id)
-                    print("The message template is as fllows: ",message_template)
+            messages = []
+            for templates in message_list:
+                if not isinstance(templates, list) or len(templates) == 0:
+                    return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
 
-                    # Retrieve dynamic data from request or provide defaults
-                    date = data.get('date', 'Date')  # Default date if not provided
-                    name = data.get('name', 'Instagram User')  # Default name if not provided
-                    company_service = data.get('company_service', 'Services')  # Default service if not provided
-                    company_name = data.get('company_name', 'Company')  # Default company name if not provided
-                    address = data.get('address', '')  # Default address if not provided
+                template_messages = []  # Initialize a list to store messages for current set of templates
+                for template_id in templates:
+                    try:
+                        # Fetch message_template object from the database
+                        message_template = MessageTemplate.objects.get(id=template_id)
+                        print("The message template is as fllows: ",message_template)
 
-                    # Replace placeholders in message template with dynamic data
-                    message_content = message_template.template_content.format(
-                        name=name,
-                        company_name=company_name,
-                        company_service=company_service,
-                        date=date,
-                        address=address
-                    )
+                        # Retrieve dynamic data from request or provide defaults
+                        date = data.get('date', 'Date')  # Default date if not provided
+                        name = data.get('name', 'Instagram User')  # Default name if not provided
+                        # company_service = data.get('company_service', 'Services')  # Default service if not provided
+                        username = data.get('username', 'username_not_provided')  # Default company name if not provided
+                        # address = data.get('address', '')  # Default address if not provided
 
-                    print("The message content :",message_content)
+                        # Replace placeholders in message template with dynamic data
+                        message_content = message_template.template_content.format(
+                            name=name,
+                            username=username,
+                            # company_service=company_service,
+                            date=date,
+                            # address=address
+                        )
+
+                        print("The message content :",message_content)
 
 
-                    # Add formatted message content to the template_messages list
-                    template_messages.append(message_content)
+                        # Add formatted message content to the template_messages list
+                        template_messages.append(message_content)
 
-                except MessageTemplate.DoesNotExist:
-                    return Response({"Message": f"Message template with ID {template_id} does not exist"}, status=404)
+                    except MessageTemplate.DoesNotExist:
+                        return Response({"Message": f"Message template with ID {template_id} does not exist"}, status=404)
 
-            # Append the messages for current templates set to the main messages list
-            messages.append(template_messages)
+                # Append the messages for current templates set to the main messages list
+                messages.append(template_messages)
+        
+        else:
+            messages = custom_message
 
 
 
@@ -1699,17 +1734,19 @@ class AddMessage(APIView):
                 # Retrieve dynamic data from request or provide defaults
                 date = request.data.get('date', 'Date')  # Default date if not provided
                 name = request.data.get('name', 'Instagram User')  # Default name if not provided
-                company_service = request.data.get('company_service', 'Services')  # Default service if not provided
-                company_name = request.data.get('company_name', 'Company')  # Default company name if not provided
-                address = request.data.get('address', '')  # Default address if not provided
+                username = request.data.get('username', 'username_not_found')
+                # company_service = request.data.get('company_service', 'Services')  # Default service if not provided
+                # company_name = request.data.get('company_name', 'Company')  # Default company name if not provided
+                # address = request.data.get('address', '')  # Default address if not provided
 
                 # Replace placeholders in message template with dynamic data
                 message_content = message_template.template_content.format(
-                    name=name,
-                    company_name=company_name,
-                    company_service=company_service,
+                    name=name[0],
+                    username=username[0],
+                    # company_name=company_name,
+                    # company_service=company_service,
                     date=date,
-                    address=address
+                    # address=address
                 )
 
                 print("The message content :",message_content)
@@ -1732,11 +1769,11 @@ class AddMessage(APIView):
         
 
         try:
-            if Message.objects.filter(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent).exists():
+            if Message.objects.filter(instagram_account =instagram_account, recipient=recipient[0], content=content, scheduled_time=scheduled_time, sent=sent).exists():
                 return Response({'Message': 'Message already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
-                Message.objects.create(instagram_account =instagram_account, recipient=recipient, content=content, scheduled_time=scheduled_time, sent=sent)
+                Message.objects.create(instagram_account =instagram_account, recipient=recipient[0], content=content, scheduled_time=scheduled_time, sent=sent)
                 return Response({'Message': 'Message Added Successfully'}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'Message': f'Message creation Failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -1883,17 +1920,15 @@ class SingleInstaMessageView(APIView):
                 # Retrieve dynamic data from request or provide defaults
                 date = request.data.get('date', 'Date')  # Default date if not provided
                 name = request.data.get('name', 'Instagram User')  # Default name if not provided
-                company_service = request.data.get('company_service', 'Services')  # Default service if not provided
-                company_name = request.data.get('company_name', 'Company')  # Default company name if not provided
-                address = request.data.get('address', '')  # Default address if not provided
+                # company_service = request.data.get('company_service', 'Services')  # Default service if not provided
+                username = request.data.get('username', 'username_not_provided')  # Default company name if not provided
+                # address = request.data.get('address', '')  # Default address if not provided
 
                 # Replace placeholders in message template with dynamic data
                 message_content = message_template.template_content.format(
-                    name=name,
-                    company_name=company_name,
-                    company_service=company_service,
+                    name=name[0],
+                    username=username[0],
                     date=date,
-                    address=address
                 )
 
                 print("The message content :",message_content)
@@ -1916,7 +1951,7 @@ class SingleInstaMessageView(APIView):
 
       
         accounts = [
-            {'username': username, 'password': password, 'recipients': recipient_list, 'message': message_content, 'instagram_account': ins}
+            {'username': username, 'password': password, 'recipients': recipient_list[0], 'message': message_content, 'instagram_account': ins}
         ]
 
 
@@ -2217,7 +2252,7 @@ def single_send_messages(account):
 
 
 class TaskStatusView(APIView):
-    def get(self, request):
+    def post(self, request):
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
         
@@ -2229,14 +2264,142 @@ class TaskStatusView(APIView):
             return Response({"Message":"No Task Id Received"})
 
         try:
+
             task = Task.objects.get(id=task_id,instagram_account__user=user)
-            return Response({
+            
+            task_tmp={
                 'task_id': task.id,
                 'total_messages': task.total_messages,
                 'sent_messages': task.sent_messages,
                 'failed_messages': task.failed_messages,
-                'status': task.status,
-                'error_message': task.error_message,
-            })
+                'status': task.status
+            }
+        
+
+            message_data = []
+            for message in Message.objects.filter(tasks=task):
+                tmp = {
+                    "Sender Username":message.instagram_account.username,
+                    "Recipient": message.recipient,
+                    "Content": message.content,
+                    'scheduled_time': message.scheduled_time,
+                    "sent_status": message.sent,
+                    "sent_time": message.sent_time,
+                    'error_message': message.error,
+                }
+                message_data.append(tmp)
+
+
+            return Response({"Message":"Task Data Fetched Successuly","task":task_tmp,"Message_data":message_data}, status=status.HTTP_200_OK)
         except Task.DoesNotExist:
-            return Response({"Message": "Task not found"}, status=404)
+            return Response({"Message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class TaskStatusbyUsername(APIView):
+    def post(self, request):
+        user_id = get_user_id_from_token(request)
+        user = CustomUser.objects.filter(id=user_id).first()
+        
+        if not user:
+            return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        username_ = request.data.get("username")
+        if not username_:
+            return Response({"Message":"No username Received"})
+
+        try:
+            instagram_account = instagram_accounts.objects.filter(user=user, username=username_).first()
+            if not instagram_account:
+                return Response({"Message": "Instagram account not found for this user"}, status=status.HTTP_404_NOT_FOUND)
+
+            task_all = Task.objects.filter(instagram_account=instagram_account)
+
+            # task_all = Task.objects.filter(instagram_account__user=user,instagram_account__username=username_)
+            # print("TASKALL :",task_all)
+            if task_all.exists():
+                all_data = []
+                for task in task_all:
+
+                    task_tmp={
+                        'task_id': task.id,
+                        'total_messages': task.total_messages,
+                        'sent_messages': task.sent_messages,
+                        'failed_messages': task.failed_messages,
+                        'status': task.status
+                    }
+                
+
+                    message_data = []
+                    for message in task.message.all():
+                        tmp = {
+                            "Sender Username":message.instagram_account.username,
+                            "Recipient": message.recipient,
+                            "Content": message.content,
+                            'scheduled_time': message.scheduled_time,
+                            "sent_status": message.sent,
+                            "sent_time": message.sent_time,
+                            'error_message': message.error,
+                        }
+                        message_data.append(tmp)
+
+                    all_data.append({"task":task_tmp, 'Message_data':message_data})
+
+                return Response({"Message":"Task Data Fetched Successuly","task_data":all_data}, status=status.HTTP_200_OK)
+            else:
+                return Response({"Message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Task.DoesNotExist:
+            return Response({"Message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+        
+
+class AdminTaskStatusView(APIView):
+    def post(self, request):
+        user_id = get_user_id_from_token(request)
+        # user = CustomUser.objects.filter(id=user_id).first()
+
+        user_Admin, is_superuser = IsSuperUser(user_id)
+        if not user_Admin or not is_superuser:
+            msg = 'could not found the Admin user'
+            return Response({"Message": msg}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # if not user:
+        #     return Response({"Message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # task_id = request.data.get("task_id")
+        # if not task_id:
+        #     return Response({"Message":"No Task Id Received"})
+
+        try:
+
+            task_all = Task.objects.all()
+            all_data = []
+            for task in task_all:
+            
+                task_tmp={
+                    'task_id': task.id,
+                    'total_messages': task.total_messages,
+                    'sent_messages': task.sent_messages,
+                    'failed_messages': task.failed_messages,
+                    'status': task.status
+                }
+            
+
+                message_data = []
+                for message in Message.objects.filter(tasks=task):
+                    tmp = {
+                        "Sender Username":message.instagram_account.username,
+                        "Recipient": message.recipient,
+                        "Content": message.content,
+                        'scheduled_time': message.scheduled_time,
+                        "sent_status": message.sent,
+                        "sent_time": message.sent_time,
+                        'error_message': message.error,
+                    }
+                    message_data.append(tmp)
+
+                all_data.append({"task":task_tmp, 'Message_data':message_data})
+
+
+            return Response({"Message":"Task Data Fetched Successuly","all_task_data":all_data}, status=status.HTTP_200_OK)
+        except Task.DoesNotExist:
+            return Response({"Message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)

@@ -27,7 +27,20 @@ class MessageAdmin(admin.ModelAdmin):
 class MessageTemplateAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'template_name']
 
+# class TaskAdmin(admin.ModelAdmin):
+#     list_display = ['id', 'instagram_account', "status", 'message', "total_messages", "sent_messages","failed_messages","error_message"]
 
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ['id', 'instagram_account', 'status', 'total_messages', 'sent_messages', 'failed_messages', 'error_message', 'list_messages']
+    
+    def list_messages(self, obj):
+        return ", ".join([message.recipient for message in obj.message.all()])
+    list_messages.short_description = 'Messages'
+
+
+
+
+admin.site.register(Task,TaskAdmin)
 admin.site.register(Lead,LeadAdmin)
 admin.site.register(Message,MessageAdmin)
 admin.site.register(MessageTemplate,MessageTemplateAdmin)

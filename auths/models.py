@@ -113,6 +113,7 @@ class Message(TimeStampModel):
 
 class Task(TimeStampModel):
     instagram_account = models.ForeignKey(instagram_accounts, on_delete=models.CASCADE)
+    message = models.ManyToManyField(Message, related_name='tasks')
     total_messages = models.IntegerField(default=0)
     sent_messages = models.IntegerField(default=0)
     failed_messages = models.IntegerField(default=0)
