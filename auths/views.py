@@ -1819,9 +1819,13 @@ class AddMessage(APIView):
                 return Response({'Message': 'Message already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
             else:
-                total_messages = len(message_template)
+                total_messages = len(recipient)
                 mess = Message.objects.create(instagram_account =instagram_account, recipient=recipient[0], content=content, scheduled_time=scheduled_time, sent=sent)
-                task = Task.objects.create(instagram_account=instagram_account, total_messages=total_messages, message=mess)
+                task = Task.objects.create(instagram_account=instagram_account, total_messages=total_messages)
+                task.message.add(mess)
+                task.save()
+                print(task)
+                print(mess)
                 return Response({'Message': 'Message Added Successfully',"Task_id":task.id}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'Message': f'Message creation Failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
