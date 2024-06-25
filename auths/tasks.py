@@ -72,7 +72,7 @@ def send_message(message_id):
             # self.bot = webdriver.Chrome(options=options)
 
 
-            # options.add_argument('--headless')
+            options.add_argument('--headless')
             options.add_argument('--disable-setuid-sandbox')
             options.add_argument('--user-data-dir=/tmp/chromium')
             options.add_argument('--remote-debugging-port=9222')

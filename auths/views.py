@@ -2069,7 +2069,7 @@ class SingleInstaMessageView(APIView):
                 results.append(future.result())
         return JsonResponse({'results': results})
 
-
+from selenium.webdriver.common.action_chains import ActionChains
 
 class SingleInstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -2223,11 +2223,18 @@ class SingleInstagramBot:
                     # arguments[0].dispatchEvent(event);
                     # """, svg_element)
 
+                    # wait = WebDriverWait(self.bot, 5)
+                    # svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                    
+                    # # Click the SVG element directly
+                    # svg_element.click()
+
                     wait = WebDriverWait(self.bot, 5)
                     svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
                     
-                    # Click the SVG element directly
-                    svg_element.click()
+                    # Use ActionChains to click the SVG element
+                    action = ActionChains(self.bot)
+                    action.move_to_element(svg_element).click().perform()
 
                 except Exception as e:
                     logging.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
