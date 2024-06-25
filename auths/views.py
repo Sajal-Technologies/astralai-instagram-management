@@ -2096,7 +2096,7 @@ class SingleInstagramBot:
         # self.bot = webdriver.Chrome(options=options)
 
 
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
@@ -2177,7 +2177,6 @@ class SingleInstagramBot:
         except Exception as e:
             print(f"The error2222222222222222 --->: {e}")
             logging.error(f"Error entering login credentials: {e}")
-            return
 
         time.sleep(3)
         try:
@@ -2199,30 +2198,105 @@ class SingleInstagramBot:
         try:
             time.sleep(3)
             try:
-                new_message_button = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH,
-                                                        '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
-                )
-                new_message_button.click()
+                # new_message_button = WebDriverWait(self.bot, 5).until(
+                #     # EC.visibility_of_element_located(
+                #         EC.element_to_be_clickable(
+                #         # (By.CLASS_NAME, 'x78zum5')
+                #         (By.CSS_SELECTOR, 'div.x78zum5[role="button"]')
+                #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
+                # ))
+                # new_message_button.click()
+
+                wait = WebDriverWait(self.bot, 5)
+                svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+
+                # Use JavaScript to click the SVG element
+                # self.bot.execute_script("arguments[0].click();", svg_element)
+
+                # Use JavaScript to create and dispatch a click event
+                self.bot.execute_script("""
+                var event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                arguments[0].dispatchEvent(event);
+                """, svg_element)
+
                 time.sleep(2)
                 recipient_input = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH,
-                                                        '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
-                )
+                    # EC.visibility_of_element_located(
+                    EC.element_to_be_clickable(
+                        
+                        # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
+                        # (By.CLASS_NAME, 'x5ur3kl')
+                        (By.CSS_SELECTOR, 'input[name="queryBox"]')
+                        ))
                 recipient_input.send_keys(recipient)
                 time.sleep(2)
 
-                recipient_suggestion = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH,
-                                                        '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
-                )
-                recipient_suggestion.click()
-                time.sleep(2)
+                # Recipient Suggestion
 
-                next_button = WebDriverWait(self.bot, 5).until(
-                    EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
-                )
-                next_button.click()
+                # recipient_suggestion = WebDriverWait(self.bot, 5).until(
+                #     EC.visibility_of_element_located(
+                #         (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]')
+                #     ))
+                # recipient_suggestion.click()
+                
+                
+                wait = WebDriverWait(self.bot, 10)
+                # Modify the XPath to be more generic if "Adil Anwar" is dynamic
+                recipient_suggestion = wait.until(EC.presence_of_element_located((By.XPATH, '//div[@class="x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1uhb9sk x1plvlek xryxfnj x1iyjqo2 x2lwn1j xeuugli xdt5ytf xqjyukv x1cy8zhl x1oa3qoh x1nhvcw1"]')))
+
+                # Use JavaScript to create and dispatch a click event
+                self.bot.execute_script("""
+                var event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                arguments[0].dispatchEvent(event);
+                """, recipient_suggestion)
+                
+                
+                
+                time.sleep(2)
+                
+                
+                
+                
+                # chat Button
+
+
+                # next_button = WebDriverWait(self.bot, 5).until(
+                #     # EC.visibility_of_element_located(
+                #         EC.element_to_be_clickable(
+                #         # (By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]')
+                #         # (By.CLASS_NAME, 'x1i10hfl')
+                #         (By.CSS_SELECTOR, 'div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1cy8zhl.x1oa3qoh.x1nhvcw1')
+                #         ))
+                # next_button.click()
+
+
+
+                # Wait until the Chat Button is present in the DOM
+                Chat_button = WebDriverWait(self.bot, 5)
+                # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
+                # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
+                chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
+                # Use JavaScript to create and dispatch a click event
+                self.bot.execute_script("""
+                var event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                arguments[0].dispatchEvent(event);
+                """, chat_element)
+
+
+
+
                 time.sleep(2)
             except Exception as e:
                 Message.objects.create(
@@ -2248,13 +2322,27 @@ class SingleInstagramBot:
                 #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
                 # )
                 time.sleep(2)
-                message_area = WebDriverWait(self.bot, 10).until(
-                    EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
-                )
+                # message_area = WebDriverWait(self.bot, 10).until(
+                #     EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+                # )
 
                 
-                message_area.click()
+                # message_area.click()
                     
+
+                message_area = WebDriverWait(self.bot, 5)
+                # message_area_element = message_area.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-describedby="Message"][role="textbox"][contenteditable="true"]')))
+                message_area_element = message_area.until(EC.presence_of_element_located((By.XPATH, '//div[@aria-describedby="Message" and @role="textbox" and @contenteditable="true"]')))
+                # Use JavaScript to focus and interact with the contenteditable div
+                self.bot.execute_script("""
+                arguments[0].focus();
+                arguments[0].innerHTML = '<p class="xat24cr xdj266r">Your message here</p>';
+                var event = new Event('input', {
+                    bubbles: true,
+                    cancelable: true,
+                });
+                arguments[0].dispatchEvent(event);
+                """, message_area_element)
 
                 # message_area.send_keys(f"{message}")
 
@@ -2268,10 +2356,10 @@ class SingleInstagramBot:
                 print("The message is prior send message: ",message)
 
 
-                message_area.send_keys(message)
+                message_area_element.send_keys(message)
                 print("The message is AFTER send message: ",message)
                 time.sleep(1)
-                message_area.send_keys(Keys.RETURN)
+                message_area_element.send_keys(Keys.RETURN)
                 print("The message is AFTER ENTER: ",message)
                 time.sleep(2)
                 mess=Message.objects.create(
