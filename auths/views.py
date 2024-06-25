@@ -2096,7 +2096,7 @@ class SingleInstagramBot:
         # self.bot = webdriver.Chrome(options=options)
 
 
-        # options.add_argument('--headless')
+        options.add_argument('--headless')
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
@@ -2123,7 +2123,7 @@ class SingleInstagramBot:
 
 
         try:
-        
+
             chromedriver_path = '/usr/bin/chromedriver'
             service = Service(CHROMEDRIVER_PATH)
             self.bot = webdriver.Chrome(service=service, options=options)
@@ -2437,7 +2437,7 @@ def single_send_messages(account):
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
-        return f"Failed to send messages from {username}"
+        return f"Failed to send messages from {username}: {str(e)}"
     
 
 
