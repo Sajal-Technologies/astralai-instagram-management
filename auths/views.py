@@ -2222,7 +2222,7 @@ class SingleInstagramBot:
                     });
                     arguments[0].dispatchEvent(event);
                     """, svg_element)
-                except:
+                except Exception as e:
                     logging.error(f"Error recipient {recipient}: {e}")
 
                 time.sleep(2)
@@ -2240,7 +2240,7 @@ class SingleInstagramBot:
 
                     time.sleep(2)
 
-                except:
+                except Exception as e:
                     logging.error(f"Error recipient {recipient}: {e}")
 
                 # Recipient Suggestion
@@ -2268,7 +2268,7 @@ class SingleInstagramBot:
                     
                     time.sleep(2)
 
-                except:
+                except Exception as e:
                     logging.error(f"Error recipient {recipient}: {e}")
                 
                 
@@ -2303,7 +2303,7 @@ class SingleInstagramBot:
                     arguments[0].dispatchEvent(event);
                     """, chat_element)
 
-                except:
+                except Exception as e:
                     logging.error(f"Error recipient {recipient}: {e}")
 
 
