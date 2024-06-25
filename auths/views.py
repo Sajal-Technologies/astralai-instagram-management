@@ -1204,7 +1204,7 @@ class InstagramBot:
         # self.bot = webdriver.Chrome(options=options)
 
 
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
@@ -1285,17 +1285,18 @@ class InstagramBot:
         except Exception as e:
             print(f"The error2222222222222222 --->: {e}")
             logging.error(f"Error entering login credentials: {e}")
-            mess=Message.objects.create(
-                        instagram_account =self.instagram_account,
-                        recipient=recipient, 
-                        content = self.message,
-                        scheduled_time = timezone.now(),
-                        sent = False,
-                        sent_time = timezone.now(),
-                        error = f"Error entering login credentials: {e}"
-                        )
-            self.task.message.add(mess)
+            # mess=Message.objects.create(
+            #             instagram_account =self.instagram_account,
+            #             recipient=self.recipients,
+            #             content = self.message,
+            #             scheduled_time = timezone.now(),
+            #             sent = False,
+            #             sent_time = timezone.now(),
+            #             error = f"Error entering login credentials: {e}"
+            #             )
+            # self.task.message.add(mess)
             # self.task.failed_messages += 1
+            self.task.error_message = "Failed"
             self.task.save()
             self.bot.quit()
             return #############################################Break
@@ -1316,13 +1317,16 @@ class InstagramBot:
         self.task.status = 'in_progress'
         self.task.save()
 
+        print("self.message 11111111111111111111111111111111111111111111111",self.message)
+        print("self.recipient222222222222222222222222222222222222222222222",self.recipients)
+
         # for recipient in self.recipients:
-        for recipient, message in zip(self.recipients,self.message):
+        for recipient, message in zip(self.recipients,self.message[0]):
             print("The size of message are:================================================== ",len(self.message))
-            print(self.message)
+            print(message)
 
             print("The size of recipient are: ==================================================",len(self.recipients))
-            print(self.recipients)
+            print(recipient)
         # for message in messages:
 
             try:
@@ -1483,17 +1487,21 @@ class InstagramBot:
         self.bot.quit()
 
 def send_messages(account):
+    print("Before Getting all variable")
     username = account['username']
     password = account['password']
     recipients = account['recipients']
     message = account['message']
     instagram_account = account['instagram_account']
     task = account['task']
+    print("After Getting all variable")
     try:
         # instagram_bot = InstagramBot(username, password, recipients, message)
 
         # instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
+        print("Before instagram_bot")
         instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task)
+        print("after instagram_bot")
 
         instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
@@ -1549,20 +1557,24 @@ class InstagramBotView(APIView):
 
 
         response_data = {'task_id': task.id}
-
+        print("Towards thread")
         # Process messages in background
         executor = ThreadPoolExecutor(max_workers=1)
         executor.submit(self.process_messages, request.data, ins, task)
+        print("Afterwards thread")
 
         return JsonResponse(response_data)
 
 
     def process_messages(self, data, instagram_account, task):
+        print("HIiiiiiiiiiiiiiiii")
         
         message_list=data.get('message_list')
         recipient_list=data.get('recipient_list')
         custom_message = data.get("custom_message")
-
+        print("Byeeeeeeeeeeeeeeeeeeeeeeee")
+        print("recipient_list :",recipient_list)
+        print("custom_message :",custom_message)
         if not custom_message:
 
             messages = []
@@ -1574,7 +1586,7 @@ class InstagramBotView(APIView):
             # for templates in message_list:
             #     if not isinstance(templates, list) or len(templates) == 0:
             #         return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
-
+            print("1111111111111111111111111111111")
             template_messages = []  # Initialize a list to store messages for current set of templates
             for i in range(len(name)):
                 try:
@@ -1588,7 +1600,7 @@ class InstagramBotView(APIView):
                     # # company_service = data.get('company_service', 'Services')  # Default service if not provided
                     # username = data.get('username', 'username_not_provided')  # Default company name if not provided
                     # # address = data.get('address', '')  # Default address if not provided
-
+                    print("222222222222222222222222222")
                     # Replace placeholders in message template with dynamic data
                     message_content = message_template.template_content.format(
                         name=name[i],
@@ -1611,8 +1623,15 @@ class InstagramBotView(APIView):
             messages.append(template_messages)
         
         else:
+            print("333333333333333333333333333333")
+            date = data.get('date', 'Date')  # Default date if not provided
+            name = data.get('name', 'Instagram User')  # Default name if not provided
+            # company_service = data.get('company_service', 'Services')  # Default service if not provided
+            username = data.get('username', 'username_not_provided')
+            print(name)
+            messages=[]
             for i in range(len(name)):
-                messages=[]
+                print("44444444444444444444444444")
                 try:
                     messages_ = str(custom_message).format(
                         name=name[i],
@@ -1621,9 +1640,12 @@ class InstagramBotView(APIView):
                         date=date,
                         # address=address
                     )
-                    messages.append(messages_)
+                    print("555555555555555555555555555555")
+                    messages.append([messages_])
                 except:
+                    print("6666666666666666666666666666666")
                     messages.append(custom_message)
+            messages = [messages]
                     
 
 
@@ -1635,7 +1657,7 @@ class InstagramBotView(APIView):
         # total_messages = sum(len(messages) for messages in message_list)
 
         # task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
-
+        print("77777777777777777777777777")
         username=instagram_account.username
         password=instagram_account.password
 
@@ -1660,9 +1682,9 @@ class InstagramBotView(APIView):
 
 
         # print("The account detail is: ",accounts)
-
+        print("8888888888888888888888888888888888")
         max_simultaneous_logins = 5  # Set this to the number of simultaneous logins you want
-
+        print("Before thread")
         results = []
         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
             futures = [executor.submit(send_messages, account) for account in accounts]
@@ -1672,6 +1694,7 @@ class InstagramBotView(APIView):
 
         task.status = 'completed'
         task.save()
+        print("After thread")
         # return JsonResponse({'results': results})
         # return JsonResponse({'results': results, 'task_id': task.id})
 
