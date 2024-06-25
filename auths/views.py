@@ -2206,34 +2206,42 @@ class SingleInstagramBot:
                 #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
                 # ))
                 # new_message_button.click()
+                try:
+                    wait = WebDriverWait(self.bot, 5)
+                    svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
 
-                wait = WebDriverWait(self.bot, 5)
-                svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                    # Use JavaScript to click the SVG element
+                    # self.bot.execute_script("arguments[0].click();", svg_element)
 
-                # Use JavaScript to click the SVG element
-                # self.bot.execute_script("arguments[0].click();", svg_element)
-
-                # Use JavaScript to create and dispatch a click event
-                self.bot.execute_script("""
-                var event = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                arguments[0].dispatchEvent(event);
-                """, svg_element)
+                    # Use JavaScript to create and dispatch a click event
+                    self.bot.execute_script("""
+                    var event = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    arguments[0].dispatchEvent(event);
+                    """, svg_element)
+                except:
+                    logging.error(f"Error recipient {recipient}: {e}")
 
                 time.sleep(2)
-                recipient_input = WebDriverWait(self.bot, 5).until(
-                    # EC.visibility_of_element_located(
-                    EC.element_to_be_clickable(
-                        
-                        # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
-                        # (By.CLASS_NAME, 'x5ur3kl')
-                        (By.CSS_SELECTOR, 'input[name="queryBox"]')
-                        ))
-                recipient_input.send_keys(recipient)
-                time.sleep(2)
+                try:
+                    recipient_input = WebDriverWait(self.bot, 5).until(
+                        # EC.visibility_of_element_located(
+                        EC.element_to_be_clickable(
+                            
+                            # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
+                            # (By.CLASS_NAME, 'x5ur3kl')
+                            # (By.CSS_SELECTOR, 'input[name="queryBox"]')
+                            (By.NAME, "queryBox")
+                            ))
+                    recipient_input.send_keys(recipient)
+
+                    time.sleep(2)
+
+                except:
+                    logging.error(f"Error recipient {recipient}: {e}")
 
                 # Recipient Suggestion
 
@@ -2243,24 +2251,25 @@ class SingleInstagramBot:
                 #     ))
                 # recipient_suggestion.click()
                 
-                
-                wait = WebDriverWait(self.bot, 10)
-                # Modify the XPath to be more generic if "Adil Anwar" is dynamic
-                recipient_suggestion = wait.until(EC.presence_of_element_located((By.XPATH, '//div[@class="x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1uhb9sk x1plvlek xryxfnj x1iyjqo2 x2lwn1j xeuugli xdt5ytf xqjyukv x1cy8zhl x1oa3qoh x1nhvcw1"]')))
+                try:
+                    wait = WebDriverWait(self.bot, 10)
+                    # Modify the XPath to be more generic if "Adil Anwar" is dynamic
+                    recipient_suggestion = wait.until(EC.presence_of_element_located((By.XPATH, '//div[@class="x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1uhb9sk x1plvlek xryxfnj x1iyjqo2 x2lwn1j xeuugli xdt5ytf xqjyukv x1cy8zhl x1oa3qoh x1nhvcw1"]')))
 
-                # Use JavaScript to create and dispatch a click event
-                self.bot.execute_script("""
-                var event = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                arguments[0].dispatchEvent(event);
-                """, recipient_suggestion)
-                
-                
-                
-                time.sleep(2)
+                    # Use JavaScript to create and dispatch a click event
+                    self.bot.execute_script("""
+                    var event = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    arguments[0].dispatchEvent(event);
+                    """, recipient_suggestion)
+                    
+                    time.sleep(2)
+
+                except:
+                    logging.error(f"Error recipient {recipient}: {e}")
                 
                 
                 
@@ -2278,23 +2287,24 @@ class SingleInstagramBot:
                 # next_button.click()
 
 
+                try:
+                    # Wait until the Chat Button is present in the DOM
+                    Chat_button = WebDriverWait(self.bot, 5)
+                    # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
+                    # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
+                    chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
+                    # Use JavaScript to create and dispatch a click event
+                    self.bot.execute_script("""
+                    var event = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    arguments[0].dispatchEvent(event);
+                    """, chat_element)
 
-                # Wait until the Chat Button is present in the DOM
-                Chat_button = WebDriverWait(self.bot, 5)
-                # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
-                # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
-                chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
-                # Use JavaScript to create and dispatch a click event
-                self.bot.execute_script("""
-                var event = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                arguments[0].dispatchEvent(event);
-                """, chat_element)
-
-
+                except:
+                    logging.error(f"Error recipient {recipient}: {e}")
 
 
                 time.sleep(2)
