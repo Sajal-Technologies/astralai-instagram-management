@@ -1767,7 +1767,7 @@ class AddMessage(APIView):
         instagram_account_id = request.data.get('instagram_account_id')
         
         recipient = request.data.get('recipient')
-        content = request.data.get('content')
+        content = request.data.get('custom_message')
         scheduled_time_str = request.data.get('scheduled_time')
         # print(scheduled_time_str)
         # print(type(scheduled_time_str))
@@ -1829,7 +1829,19 @@ class AddMessage(APIView):
             except MessageTemplate.DoesNotExist:
                 return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
         else:
-            content = content
+            try:
+                date = request.data.get('date', 'Date')  # Default date if not provided
+                name = request.data.get('name', 'Instagram User')  # Default name if not provided
+                username = request.data.get('username', 'username_not_provided')
+                message_contents = content.format(
+                        name=name[0],
+                        username=username[0],
+                        date=date
+                    )
+                content = message_contents
+            except:    
+
+                content = content
 
 
         print("The COntent is :",content)
@@ -2015,7 +2027,22 @@ class SingleInstaMessageView(APIView):
             except MessageTemplate.DoesNotExist:
                 return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
         else:
-            message_content = custom_message
+
+            try:
+                date = request.data.get('date', 'Date')  # Default date if not provided
+                name = request.data.get('name', 'Instagram User')  # Default name if not provided
+                username = request.data.get('username', 'username_not_provided')
+                message_contents = custom_message.format(
+                        name=name[0],
+                        username=username[0],
+                        date=date
+                    )
+                message_content = message_contents
+            except:    
+
+                message_content = custom_message
+
+            # message_content = custom_message
 
         ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
         if not ins:
