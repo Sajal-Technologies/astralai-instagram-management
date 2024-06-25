@@ -2207,21 +2207,28 @@ class SingleInstagramBot:
                 # ))
                 # new_message_button.click()
                 try:
+                    # wait = WebDriverWait(self.bot, 5)
+                    # svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+
+                    # # Use JavaScript to click the SVG element
+                    # # self.bot.execute_script("arguments[0].click();", svg_element)
+
+                    # # Use JavaScript to create and dispatch a click event
+                    # self.bot.execute_script("""
+                    # var event = new MouseEvent('click', {
+                    #     bubbles: true,
+                    #     cancelable: true,
+                    #     view: window
+                    # });
+                    # arguments[0].dispatchEvent(event);
+                    # """, svg_element)
+
                     wait = WebDriverWait(self.bot, 5)
-                    svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                    svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                    
+                    # Click the SVG element directly
+                    svg_element.click()
 
-                    # Use JavaScript to click the SVG element
-                    # self.bot.execute_script("arguments[0].click();", svg_element)
-
-                    # Use JavaScript to create and dispatch a click event
-                    self.bot.execute_script("""
-                    var event = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    arguments[0].dispatchEvent(event);
-                    """, svg_element)
                 except Exception as e:
                     logging.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
 
