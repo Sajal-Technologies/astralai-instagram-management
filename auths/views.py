@@ -2247,18 +2247,57 @@ class SingleInstagramBot:
 
                 time.sleep(2)
                 try:
-                    recipient_input = WebDriverWait(self.bot, 5).until(
-                        # EC.visibility_of_element_located(
-                        EC.element_to_be_clickable(
+                    # recipient_input = WebDriverWait(self.bot, 5).until(
+                    #     # EC.visibility_of_element_located(
+                    #     EC.element_to_be_clickable(
                             
-                            # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
-                            # (By.CLASS_NAME, 'x5ur3kl')
-                            # (By.CSS_SELECTOR, 'input[name="queryBox"]')
-                            (By.NAME, "queryBox")
-                            ))
-                    recipient_input.send_keys(recipient)
+                    #         # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
+                    #         # (By.CLASS_NAME, 'x5ur3kl')
+                    #         # (By.CSS_SELECTOR, 'input[name="queryBox"]')
+                    #         (By.NAME, "queryBox")
+                    #         ))
+                    # recipient_input.send_keys(recipient)
+
+                    # time.sleep(2)
+
+
+
+                    try:
+                        # Method 1: By name
+                        search_box = self.bot.find_element(By.NAME, "queryBox")
+                    except Exception as e:
+                        try:
+                            # Method 4: By CSS selector with attribute placeholder
+                            search_box = self.bot.find_element(By.CSS_SELECTOR, 'input[placeholder="Search..."]')
+                        except Exception as e:
+                            try:
+                                # Method 6: By XPATH with attribute placeholder
+                                search_box = self.bot.find_element(By.XPATH, '//input[@placeholder="Search..."]')
+                            except Exception as e:
+                                try:
+                                    # Method 7: By XPATH with multiple class names
+                                    search_box = self.bot.find_element(By.XPATH, '//input[contains(@class, "x5ur3kl") and contains(@class, "xopu45v")]')
+                                except Exception as e:
+                                    try:
+                                        # Method 8: By XPATH with type attribute
+                                        search_box = self.bot.find_element(By.XPATH, '//input[@type="text"]')
+                                    except Exception as e:
+                                        try:
+                                            # Method 9: By XPATH with name attribute
+                                            search_box = self.bot.find_element(By.XPATH, '//input[@name="queryBox"]')
+                                        except Exception as e:
+                                            try:
+                                                # Method 10: By partial link text (not recommended for input but shown as an example)
+                                                search_box = self.bot.find_element(By.PARTIAL_LINK_TEXT, "Search")
+                                            except Exception as e:
+                                                print("Element not found with any method")
+                    search_box.send_keys(recipient)
 
                     time.sleep(2)
+
+
+
+
 
                 except Exception as e:
                     logging.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
