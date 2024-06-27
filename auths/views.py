@@ -2059,7 +2059,7 @@ class SingleInstaMessageView(APIView):
 
         # print("The account detail is: ",accounts)
 
-        max_simultaneous_logins = 1  # Set this to the number of simultaneous logins you want
+        max_simultaneous_logins = 10  # Set this to the number of simultaneous logins you want
 
         results = []
         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
