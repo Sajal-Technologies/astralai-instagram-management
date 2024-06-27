@@ -264,7 +264,7 @@ class UserModifyView(APIView):
 class AdminGetInstaAccounts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         user_id = get_user_id_from_token(request)
         user, is_superuser = IsSuperUser(user_id)
         
@@ -371,7 +371,7 @@ class AdminViewUsers(APIView):
     """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         
 
         user_id = get_user_id_from_token(request)
@@ -647,7 +647,7 @@ class AddInstagramAccount(APIView):
 class GetInstagramAccounts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def get(self, request):
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
         
@@ -874,7 +874,7 @@ class SaveLeadData(APIView):
 
 
 class GetLeaddata(APIView):
-    def post(self, request, format=None):
+    def get(self, request, format=None):
 
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
@@ -1087,7 +1087,7 @@ class AddMessageTemplate(APIView):
 
 
 class GetMessageTemplate(APIView):
-    def post(self, request, format=None):
+    def get(self, request, format=None):
 
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
@@ -2088,7 +2088,8 @@ class SingleInstagramBot:
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
         options.add_argument('--disable-extensions')
-        options.add_argument('--window-size=1200x600')
+        # options.add_argument('--window-size=1366×768')
+        options.add_argument("--window-size=1920,1080")
         options.add_argument('--disable-client-side-phishing-detection')
 
         # options.binary_location = '/usr/bin/chromedriver' 
@@ -2228,13 +2229,18 @@ class SingleInstagramBot:
                     
                     # # Click the SVG element directly
                     # svg_element.click()
+                    try:
+                        wait = WebDriverWait(self.bot, 5)
+                        svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                        
+                        # Use ActionChains to click the SVG element
+                        action = ActionChains(self.bot)
+                        action.move_to_element(svg_element).click().perform()
+                    except:
+                        element = WebDriverWait(self.bot, 10).until( EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']")) ) 
+                        # element.click()
 
-                    wait = WebDriverWait(self.bot, 5)
-                    svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
-                    
-                    # Use ActionChains to click the SVG element
-                    action = ActionChains(self.bot)
-                    action.move_to_element(svg_element).click().perform()
+                        self.bot.execute_script("arguments[0].click();", element)
 
                 except Exception as e:
                     logging.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
