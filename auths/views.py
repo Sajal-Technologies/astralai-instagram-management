@@ -264,7 +264,7 @@ class UserModifyView(APIView):
 class AdminGetInstaAccounts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         user_id = get_user_id_from_token(request)
         user, is_superuser = IsSuperUser(user_id)
         
@@ -371,7 +371,7 @@ class AdminViewUsers(APIView):
     """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         
 
         user_id = get_user_id_from_token(request)
@@ -460,7 +460,7 @@ class AdminViewAllUsers(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         user_id = get_user_id_from_token(request)
         user, is_superuser = IsSuperUser(user_id)
 
@@ -647,7 +647,7 @@ class AddInstagramAccount(APIView):
 class GetInstagramAccounts(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def post(self, request):
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
         
@@ -751,7 +751,7 @@ class UserProfileView(APIView):
     """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         serializer = UserProfileSerializer(request.user)
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
@@ -1705,7 +1705,7 @@ class InstagramBotView(APIView):
 
 
 class GetMessage(APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
 
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
@@ -1893,7 +1893,7 @@ class deleteMessage(APIView):
         
 
 class GetMessagewithtime(APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         # Get user ID from token
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
