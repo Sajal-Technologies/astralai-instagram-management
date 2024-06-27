@@ -1963,6 +1963,9 @@ class GetMessagewithtime(APIView):
             return Response({"Message": f"Error Occurred while fetching Message Data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+
+
+
 class SingleInstaMessageView(APIView):
 
     @csrf_exempt
@@ -1970,7 +1973,7 @@ class SingleInstaMessageView(APIView):
         return super().dispatch(*args, **kwargs)
 
     def post(self, request):
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        # self.logger.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
         instagram_account_id=request.data.get('instagram_account_id')
@@ -2070,6 +2073,7 @@ class SingleInstaMessageView(APIView):
         return JsonResponse({'results': results})
 
 from selenium.webdriver.common.action_chains import ActionChains
+import undetected_chromedriver as uc  # Import undetected_chromedriver
 
 class SingleInstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -2082,7 +2086,8 @@ class SingleInstagramBot:
         self.base_url = 'https://www.instagram.com/'
 
         # options = uc.ChromeOptions()
-        options = webdriver.ChromeOptions()
+        # options = webdriver.ChromeOptions()
+        options = uc.ChromeOptions()
         # options.headless = True
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -2101,7 +2106,26 @@ class SingleInstagramBot:
         options.add_argument('--disable-setuid-sandbox')
         options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
-        logging.basicConfig(level=logging.DEBUG)
+        # logging.basicConfig(level=logging.DEBUG)
+
+         # Initialize custom logger
+        self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+
+        class FilterOutSpecificWarnings(logging.Filter):
+            def filter(self, record):
+                # Filter out the warnings you want to suppress
+                message = record.getMessage()
+                if "Permissions-Policy header: Unrecognized feature: 'battery'" in message \
+                   or "Permissions-Policy header: Unrecognized feature: 'usb-unrestricted'" in message:
+                    return False  # Return False to suppress these log records
+                return True
+
+        stream_handler.addFilter(FilterOutSpecificWarnings())
+        self.logger.addHandler(stream_handler)
         print("Options set SUCCESSFULLY")
 
 
@@ -2127,7 +2151,8 @@ class SingleInstagramBot:
 
             chromedriver_path = '/usr/bin/chromedriver'
             service = Service(CHROMEDRIVER_PATH)
-            self.bot = webdriver.Chrome(service=service, options=options)
+            # self.bot = webdriver.Chrome(service=service, options=options)
+            self.bot = uc.Chrome(options=options)
 
             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
             # self.bot = webdriver.Chrome(options=options)
@@ -2149,7 +2174,7 @@ class SingleInstagramBot:
             print("Login SUCCESSFULLY")
         except Exception as e:
             print(f"The error is is --->: {e}")
-            logging.error(f"Error during login for {self.username}: {e}")
+            self.logger.error(f"Error during login for {self.username}: {e}")
             self.bot.quit()
 
     def handle_popup(self):
@@ -2159,7 +2184,7 @@ class SingleInstagramBot:
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
                 )
                 not_now_button.click()
-                logging.info(f"Popup closed for {self.username}")
+                self.logger.info(f"Popup closed for {self.username}")
             except Exception as e:
                 time.sleep(1)
 
@@ -2177,7 +2202,7 @@ class SingleInstagramBot:
             time.sleep(5)
         except Exception as e:
             print(f"The error2222222222222222 --->: {e}")
-            logging.error(f"Error entering login credentials: {e}")
+            self.logger.error(f"Error entering login credentials: {e}")
 
         time.sleep(3)
         try:
@@ -2189,7 +2214,7 @@ class SingleInstagramBot:
 
             time.sleep(2)
         except Exception as e:
-            logging.error(f"Error navigating to message section: {e}")
+            self.logger.error(f"Error navigating to message section: {e}")
             return
         recipient = self.recipients
         message = self.message
@@ -2243,7 +2268,7 @@ class SingleInstagramBot:
                         self.bot.execute_script("arguments[0].click();", element)
 
                 except Exception as e:
-                    logging.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
+                    self.logger.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
 
                 time.sleep(2)
                 try:
@@ -2300,7 +2325,7 @@ class SingleInstagramBot:
 
 
                 except Exception as e:
-                    logging.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
+                    self.logger.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
 
                 # Recipient Suggestion
 
@@ -2328,7 +2353,7 @@ class SingleInstagramBot:
                     time.sleep(2)
 
                 except Exception as e:
-                    logging.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
+                    self.logger.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
                 
                 
                 
@@ -2363,7 +2388,7 @@ class SingleInstagramBot:
                     """, chat_element)
 
                 except Exception as e:
-                    logging.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
+                    self.logger.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
 
 
                 time.sleep(2)
@@ -2377,7 +2402,7 @@ class SingleInstagramBot:
                     sent_time = timezone.now(),
                     error = f"Error adding recipient {recipient}: {e}"
                     )
-                logging.error(f"Error adding recipient {recipient}: {e}")
+                self.logger.error(f"Error adding recipient {recipient}: {e}")
                 
 
             try:
@@ -2444,7 +2469,7 @@ class SingleInstagramBot:
                 mess.save()
                 time.sleep(1)
             except Exception as e:
-                logging.error(f"Error sending message to {recipient}: {e}")
+                self.logger.error(f"Error sending message to {recipient}: {e}")
                 Message.objects.create(
                     instagram_account =self.instagram_account, 
                     recipient=recipient,
@@ -2468,7 +2493,7 @@ class SingleInstagramBot:
                     sent = False,
                     sent_time = timezone.now(),
                     error = f"Error handling message for {recipient}: {e}")
-            logging.error(f"Error handling message for {recipient}: {e}")
+            self.logger.error(f"Error handling message for {recipient}: {e}")
 
     def logout(self):
         try:
@@ -2484,7 +2509,7 @@ class SingleInstagramBot:
             self.bot.find_element(By.XPATH, logout_xpath).click()
             time.sleep(2)
         except Exception as e:
-            logging.error(f"An error occurred during logout: {e}")
+            self.logger.error(f"An error occurred during logout: {e}")
 
     def close_browser(self):
         self.logout()
@@ -2505,8 +2530,11 @@ def single_send_messages(account):
         # instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
-        logging.error(f"An error occurred with account {username}: {e}")
+        # self.logger.error(f"An error occurred with account {username}: {e}")
         return f"Failed to send messages from {username}: {str(e)}"
+   
+
+
    
 
 
