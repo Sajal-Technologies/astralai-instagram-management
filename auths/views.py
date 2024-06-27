@@ -2456,7 +2456,7 @@ class SingleInstagramBot:
                     )
                 
             finally:
-                self.bot.refresh()
+                self.close_browser()
                 time.sleep(2)
 
         except Exception as e:
@@ -2502,7 +2502,7 @@ def single_send_messages(account):
 
         instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
 
-        instagram_bot.close_browser()
+        # instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
