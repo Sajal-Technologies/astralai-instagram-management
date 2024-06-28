@@ -2317,6 +2317,7 @@ class SingleInstagramBot:
         #     print(response.json())  # Print the JSON response
             json_response = response.json()
             pk_ids = [user['user']['pk_id'] for user in json_response['users']]
+            print(pk_ids)
             return int(pk_ids[0])
             print(pk_ids[0])
 
@@ -2359,20 +2360,22 @@ class SingleInstagramBot:
             for cookie in cookies_list:
                 cookies[cookie['name']] = cookie['value']
 
-            user_unique_code = self.get_all_user(recipient, cookies)
+            client_user_unique_code = self.get_all_user(recipient, cookies)
 
 
 
             # user_id = self.get_user_id(recipient)
             # user_unique_code = self.ad(user_id)
-            print("user_unique_code:   ",user_unique_code)
+            print("user_unique_code:   ",client_user_unique_code)
             # user_unique_code = self.get_user_id(recipient)
+            user_unique_code = self.ad(client_user_unique_code)
             time.sleep(2)
             self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
 
 
 
             time.sleep(2)
+            
         except Exception as e:
             self.logger.error(f"Error navigating to User Message section: {e}")
             return
