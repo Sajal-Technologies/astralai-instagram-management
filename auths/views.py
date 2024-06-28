@@ -2202,6 +2202,7 @@ class SingleInstagramBot:
 
         response = requests.get(url, headers=headers)
         time.sleep(2)
+        print("respnse text :",response.text)
 
         if response.status_code == 200:
     #         print(response.json())  # or response.text if the content is not JSON
