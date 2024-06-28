@@ -2294,6 +2294,36 @@ class SingleInstagramBot:
         except:
             print("Error Occured During Process")
             return None
+        
+    def get_all_user(self,username, cookies):
+        # Define the URL and updated cookies
+        url = f'https://www.instagram.com/web/search/topsearch/?query={username}'
+
+        # cookies = {'rur': '"CCO\\05464736011245\\0541751121068:01f7fc95e3ff14d77771115195eb34e8741fe6ee5e852032dad50bef6b4e299fd42ce06f"', 'ds_user_id': '64736011245', 'csrftoken': 'Me5udPTxg64s9YLHImsFZy6L18NbwlY3', 'datr': 'JMl-Zjbdap2Ifo2R5pc_PPnn', 'ig_did': '6A6C31B1-DF71-4DCD-A428-00B9D24C4BB4', 'sessionid': '64736011245%3ArtfRByw809pNAl%3A10%3AAYdRcUIh5PGuz67IgY3669NMIFQzw_hfKvQ3zuucXQ', 'ps_n': '1', 'dpr': '1.25', 'ps_l': '1', 'mid': 'Zn7JJAALAAEOLRonIIhzpY333usr', 'wd': '1036x651'}
+
+        cookies = cookies
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'Referer': 'https://www.instagram.com/',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+
+        # Send a GET request to the Instagram API with cookies and headers
+        response = requests.get(url, cookies=cookies, headers=headers)
+
+        # Check if request was successful (status code 200)
+        if response.status_code == 200:
+        #     print(response.json())  # Print the JSON response
+            json_response = response.json()
+            pk_ids = [user['user']['pk_id'] for user in json_response['users']]
+            return int(pk_ids[0])
+            print(pk_ids[0])
+
+        else:
+            print(f"Request failed with status code {response.status_code}")
+            print(response.text)  # Print the response content for further inspection
+            return None
 
     def login(self):
         self.bot.get(self.base_url)
@@ -2321,8 +2351,20 @@ class SingleInstagramBot:
             # self.bot.find_element(By.XPATH,
             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
             
-            user_id = self.get_user_id(recipient)
-            user_unique_code = self.ad(user_id)
+            cook = self.bot.get_cookies()
+            # Convert to the desired format
+            cookies_list=cook
+
+            cookies = {}
+            for cookie in cookies_list:
+                cookies[cookie['name']] = cookie['value']
+
+            user_unique_code = self.get_all_user(recipient, cookies)
+
+
+
+            # user_id = self.get_user_id(recipient)
+            # user_unique_code = self.ad(user_id)
             print("user_unique_code:   ",user_unique_code)
             # user_unique_code = self.get_user_id(recipient)
             time.sleep(2)
