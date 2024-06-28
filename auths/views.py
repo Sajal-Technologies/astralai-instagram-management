@@ -2074,6 +2074,8 @@ class SingleInstaMessageView(APIView):
 
 from selenium.webdriver.common.action_chains import ActionChains
 import undetected_chromedriver as uc  # Import undetected_chromedriver
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import requests
 
 class SingleInstagramBot:
     # def __init__(self, username, password, recipients, message):
@@ -2104,7 +2106,7 @@ class SingleInstagramBot:
 
         options.add_argument('--headless')
         options.add_argument('--disable-setuid-sandbox')
-        options.add_argument('--user-data-dir=/tmp/chromium')
+        # options.add_argument('--user-data-dir=/tmp/chromium')
         options.add_argument('--remote-debugging-port=9222')
         # logging.basicConfig(level=logging.DEBUG)
 
@@ -2188,14 +2190,33 @@ class SingleInstagramBot:
             except Exception as e:
                 time.sleep(1)
 
+    def get_user_id(self,username):
+        url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+
+        headers = {
+            "accept": "*/*",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "x-ig-app-id": "936619743392459",
+            "x-requested-with": "XMLHttpRequest"
+        }
+
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+    #         print(response.json())  # or response.text if the content is not JSON
+            return response.json()['data']['user']['eimu_id']
+        else:
+            return None
+            print(f"Failed to retrieve data: {response.status_code}")
+
     def login(self):
         self.bot.get(self.base_url)
         try:
-            enter_username = WebDriverWait(self.bot, 20).until(
+            enter_username = WebDriverWait(self.bot, 10).until(
                 EC.presence_of_element_located((By.NAME, 'username')))
             enter_username.send_keys(self.username)
 
-            enter_password = WebDriverWait(self.bot, 20).until(
+            enter_password = WebDriverWait(self.bot, 10).until(
                 EC.presence_of_element_located((By.NAME, 'password')))
             enter_password.send_keys(self.password)
             enter_password.send_keys(Keys.RETURN)
@@ -2205,224 +2226,252 @@ class SingleInstagramBot:
             self.logger.error(f"Error entering login credentials: {e}")
 
         time.sleep(3)
+
+        recipient = self.recipients
+        message = self.message
+
         try:
             # self.bot.find_element(By.XPATH,
             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
-            
-            self.bot.get("https://www.instagram.com/direct/inbox/")
+            user_unique_code = self.get_user_id(recipient)
+            self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
 
 
             time.sleep(2)
         except Exception as e:
-            self.logger.error(f"Error navigating to message section: {e}")
+            self.logger.error(f"Error navigating to User Message section: {e}")
             return
-        recipient = self.recipients
-        message = self.message
 
         # for recipient, messages in zip(self.recipients, self.message):
         #     for message in messages:
         try:
             time.sleep(3)
             try:
-                # new_message_button = WebDriverWait(self.bot, 5).until(
-                #     # EC.visibility_of_element_located(
-                #         EC.element_to_be_clickable(
-                #         # (By.CLASS_NAME, 'x78zum5')
-                #         (By.CSS_SELECTOR, 'div.x78zum5[role="button"]')
-                #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
-                # ))
-                # new_message_button.click()
-                try:
-                    # wait = WebDriverWait(self.bot, 5)
-                    # svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+            #     # new_message_button = WebDriverWait(self.bot, 5).until(
+            #     #     # EC.visibility_of_element_located(
+            #     #         EC.element_to_be_clickable(
+            #     #         # (By.CLASS_NAME, 'x78zum5')
+            #     #         (By.CSS_SELECTOR, 'div.x78zum5[role="button"]')
+            #     #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
+            #     # ))
+            #     # new_message_button.click()
+            #     try:
+            #         # wait = WebDriverWait(self.bot, 5)
+            #         # svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
 
-                    # # Use JavaScript to click the SVG element
-                    # # self.bot.execute_script("arguments[0].click();", svg_element)
+            #         # # Use JavaScript to click the SVG element
+            #         # # self.bot.execute_script("arguments[0].click();", svg_element)
 
-                    # # Use JavaScript to create and dispatch a click event
-                    # self.bot.execute_script("""
-                    # var event = new MouseEvent('click', {
-                    #     bubbles: true,
-                    #     cancelable: true,
-                    #     view: window
-                    # });
-                    # arguments[0].dispatchEvent(event);
-                    # """, svg_element)
+            #         # # Use JavaScript to create and dispatch a click event
+            #         # self.bot.execute_script("""
+            #         # var event = new MouseEvent('click', {
+            #         #     bubbles: true,
+            #         #     cancelable: true,
+            #         #     view: window
+            #         # });
+            #         # arguments[0].dispatchEvent(event);
+            #         # """, svg_element)
 
-                    # wait = WebDriverWait(self.bot, 5)
-                    # svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+            #         # wait = WebDriverWait(self.bot, 5)
+            #         # svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
                     
-                    # # Click the SVG element directly
-                    # svg_element.click()
-                    try:
-                        wait = WebDriverWait(self.bot, 5)
-                        svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+            #         # # Click the SVG element directly
+            #         # svg_element.click()
+            #         try:
+            #             wait = WebDriverWait(self.bot, 5)
+            #             svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
                         
-                        # Use ActionChains to click the SVG element
-                        action = ActionChains(self.bot)
-                        action.move_to_element(svg_element).click().perform()
-                    except:
-                        element = WebDriverWait(self.bot, 10).until( EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']")) ) 
-                        # element.click()
+            #             # Use ActionChains to click the SVG element
+            #             action = ActionChains(self.bot)
+            #             action.move_to_element(svg_element).click().perform()
+            #         except:
+            #             element = WebDriverWait(self.bot, 10).until( EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']")) ) 
+            #             # element.click()
 
-                        self.bot.execute_script("arguments[0].click();", element)
+            #             self.bot.execute_script("arguments[0].click();", element)
 
-                except Exception as e:
-                    self.logger.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
+            #     except Exception as e:
+            #         self.logger.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
 
-                time.sleep(2)
-                try:
-                    # recipient_input = WebDriverWait(self.bot, 5).until(
-                    #     # EC.visibility_of_element_located(
-                    #     EC.element_to_be_clickable(
+            #     time.sleep(2)
+            #     try:
+            #         # recipient_input = WebDriverWait(self.bot, 5).until(
+            #         #     # EC.visibility_of_element_located(
+            #         #     EC.element_to_be_clickable(
                             
-                    #         # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
-                    #         # (By.CLASS_NAME, 'x5ur3kl')
-                    #         # (By.CSS_SELECTOR, 'input[name="queryBox"]')
-                    #         (By.NAME, "queryBox")
-                    #         ))
-                    # recipient_input.send_keys(recipient)
+            #         #         # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
+            #         #         # (By.CLASS_NAME, 'x5ur3kl')
+            #         #         # (By.CSS_SELECTOR, 'input[name="queryBox"]')
+            #         #         (By.NAME, "queryBox")
+            #         #         ))
+            #         # recipient_input.send_keys(recipient)
 
-                    # time.sleep(2)
-
-
-
-                    try:
-                        # Method 1: By name
-                        search_box = self.bot.find_element(By.NAME, "queryBox")
-                    except Exception as e:
-                        try:
-                            # Method 4: By CSS selector with attribute placeholder
-                            search_box = self.bot.find_element(By.CSS_SELECTOR, 'input[placeholder="Search..."]')
-                        except Exception as e:
-                            try:
-                                # Method 6: By XPATH with attribute placeholder
-                                search_box = self.bot.find_element(By.XPATH, '//input[@placeholder="Search..."]')
-                            except Exception as e:
-                                try:
-                                    # Method 7: By XPATH with multiple class names
-                                    search_box = self.bot.find_element(By.XPATH, '//input[contains(@class, "x5ur3kl") and contains(@class, "xopu45v")]')
-                                except Exception as e:
-                                    try:
-                                        # Method 8: By XPATH with type attribute
-                                        search_box = self.bot.find_element(By.XPATH, '//input[@type="text"]')
-                                    except Exception as e:
-                                        try:
-                                            # Method 9: By XPATH with name attribute
-                                            search_box = self.bot.find_element(By.XPATH, '//input[@name="queryBox"]')
-                                        except Exception as e:
-                                            try:
-                                                # Method 10: By partial link text (not recommended for input but shown as an example)
-                                                search_box = self.bot.find_element(By.PARTIAL_LINK_TEXT, "Search")
-                                            except Exception as e:
-                                                print("Element not found with any method")
-                    search_box.send_keys(recipient)
-
-                    time.sleep(2)
+            #         # time.sleep(2)
 
 
 
+            #         try:
+            #             # Method 1: By name
+            #             search_box = self.bot.find_element(By.NAME, "queryBox")
+            #         except Exception as e:
+            #             try:
+            #                 # Method 4: By CSS selector with attribute placeholder
+            #                 search_box = self.bot.find_element(By.CSS_SELECTOR, 'input[placeholder="Search..."]')
+            #             except Exception as e:
+            #                 try:
+            #                     # Method 6: By XPATH with attribute placeholder
+            #                     search_box = self.bot.find_element(By.XPATH, '//input[@placeholder="Search..."]')
+            #                 except Exception as e:
+            #                     try:
+            #                         # Method 7: By XPATH with multiple class names
+            #                         search_box = self.bot.find_element(By.XPATH, '//input[contains(@class, "x5ur3kl") and contains(@class, "xopu45v")]')
+            #                     except Exception as e:
+            #                         try:
+            #                             # Method 8: By XPATH with type attribute
+            #                             search_box = self.bot.find_element(By.XPATH, '//input[@type="text"]')
+            #                         except Exception as e:
+            #                             try:
+            #                                 # Method 9: By XPATH with name attribute
+            #                                 search_box = self.bot.find_element(By.XPATH, '//input[@name="queryBox"]')
+            #                             except Exception as e:
+            #                                 try:
+            #                                     # Method 10: By partial link text (not recommended for input but shown as an example)
+            #                                     search_box = self.bot.find_element(By.PARTIAL_LINK_TEXT, "Search")
+            #                                 except Exception as e:
+            #                                     print("Element not found with any method")
+            #         search_box.send_keys(recipient)
+
+            #         time.sleep(2)
 
 
-                except Exception as e:
-                    self.logger.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
 
-                # Recipient Suggestion
 
-                # recipient_suggestion = WebDriverWait(self.bot, 5).until(
-                #     EC.visibility_of_element_located(
-                #         (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]')
-                #     ))
-                # recipient_suggestion.click()
+
+            #     except Exception as e:
+            #         self.logger.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
+            #         self.close_browser()
+
+            #     # Recipient Suggestion
+
+            #     # recipient_suggestion = WebDriverWait(self.bot, 5).until(
+            #     #     EC.visibility_of_element_located(
+            #     #         (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]')
+            #     #     ))
+            #     # recipient_suggestion.click()
                 
-                try:
-                    wait = WebDriverWait(self.bot, 10)
-                    # Modify the XPath to be more generic if "Adil Anwar" is dynamic
-                    recipient_suggestion = wait.until(EC.presence_of_element_located((By.XPATH, '//div[@class="x9f619 xjbqb8w x78zum5 x168nmei x13lgxp2 x5pf9jr xo71vjh x1uhb9sk x1plvlek xryxfnj x1iyjqo2 x2lwn1j xeuugli xdt5ytf xqjyukv x1cy8zhl x1oa3qoh x1nhvcw1"]')))
+            #     try:
+            #         # Ensure the element is visible and clickable
+            #         suggestion_element = WebDriverWait(self.bot, 10).until(
+            #             EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and @tabindex="0"]'))
+            #             # EC.element_to_be_clickable((By.CSS_SELECTOR, '.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.x1q0g3np.xqjyukv.x6s0dn4.x1oa3qoh.x1nhvcw1'))
+            #         )
 
-                    # Use JavaScript to create and dispatch a click event
-                    self.bot.execute_script("""
-                    var event = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    arguments[0].dispatchEvent(event);
-                    """, recipient_suggestion)
+
+            #         suggestion_element.click()
+
+            #         # Scroll to the element
+            #         # self.bot.execute_script("arguments[0].scrollIntoView(true);", suggestion_element)
+
+            #         # # Pause to allow any potential overlays to load
+            #         # time.sleep(2)
+
+            #         # # Remove any potentially overlapping elements
+            #         # self.bot.execute_script("""
+            #         #     var elements = document.getElementsByClassName('x1qjc9v5 x9f619 x78zum5 xdt5ytf x1iyjqo2 xl56j7k');
+            #         #     for(var i = 0; i < elements.length; i++) {
+            #         #         elements[i].style.display = 'none';
+            #         #     }
+            #         # """)
+
+            #         # Pause to ensure the DOM is updated
+            #         time.sleep(2)
+
+            #         # # Use Action Chains to move to the element before clicking
+            #         # actions = ActionChains(self.bot)
+            #         # actions.move_to_element(suggestion_element).click().perform()
+
                     
-                    time.sleep(2)
+            #         time.sleep(2)
+            #         print("SUGGESTION CODE PASSED")
 
-                except Exception as e:
-                    self.logger.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
+            #     except Exception as e:
+            #         self.logger.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
+            #         self.close_browser()
                 
                 
                 
                 
-                # chat Button
+            #     # chat Button
 
 
-                # next_button = WebDriverWait(self.bot, 5).until(
-                #     # EC.visibility_of_element_located(
-                #         EC.element_to_be_clickable(
-                #         # (By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]')
-                #         # (By.CLASS_NAME, 'x1i10hfl')
-                #         (By.CSS_SELECTOR, 'div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1cy8zhl.x1oa3qoh.x1nhvcw1')
-                #         ))
-                # next_button.click()
+            #     # next_button = WebDriverWait(self.bot, 5).until(
+            #     #     # EC.visibility_of_element_located(
+            #     #         EC.element_to_be_clickable(
+            #     #         # (By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]')
+            #     #         # (By.CLASS_NAME, 'x1i10hfl')
+            #     #         (By.CSS_SELECTOR, 'div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1cy8zhl.x1oa3qoh.x1nhvcw1')
+            #     #         ))
+            #     # next_button.click()
 
 
-                try:
-                    # Wait until the Chat Button is present in the DOM
-                    Chat_button = WebDriverWait(self.bot, 5)
-                    # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
-                    # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
-                    chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
-                    # Use JavaScript to create and dispatch a click event
-                    self.bot.execute_script("""
-                    var event = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    arguments[0].dispatchEvent(event);
-                    """, chat_element)
+            #     try:
+            #         # Wait until the Chat Button is present in the DOM
+            #         Chat_button = WebDriverWait(self.bot, 5)
+            #         # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
+            #         # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
+            #         chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
+            #         # Use JavaScript to create and dispatch a click event
+            #         self.bot.execute_script("""
+            #         var event = new MouseEvent('click', {
+            #             bubbles: true,
+            #             cancelable: true,
+            #             view: window
+            #         });
+            #         arguments[0].dispatchEvent(event);
+            #         """, chat_element)
 
-                except Exception as e:
-                    self.logger.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
+            #     except Exception as e:
+            #         self.logger.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
+            #         self.close_browser()
 
 
-                time.sleep(2)
-            except Exception as e:
-                Message.objects.create(
-                    instagram_account =self.instagram_account,
-                    recipient=recipient, 
-                    content = message,
-                    scheduled_time = timezone.now(),
-                    sent = False,
-                    sent_time = timezone.now(),
-                    error = f"Error adding recipient {recipient}: {e}"
-                    )
-                self.logger.error(f"Error adding recipient {recipient}: {e}")
+            #     time.sleep(2)
+            # except Exception as e:
+            #     Message.objects.create(
+            #         instagram_account =self.instagram_account,
+            #         recipient=recipient, 
+            #         content = message,
+            #         scheduled_time = timezone.now(),
+            #         sent = False,
+            #         sent_time = timezone.now(),
+            #         error = f"Error adding recipient {recipient}: {e}"
+            #         )
+            #     self.logger.error(f"Error adding recipient {recipient}: {e}")
                 
 
-            try:
-                # message_area = WebDriverWait(self.bot, 5).until(
-                #     EC.visibility_of_element_located((By.XPATH,
-                #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
-                #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
-                # )
+            # try:
+            #     # message_area = WebDriverWait(self.bot, 5).until(
+            #     #     EC.visibility_of_element_located((By.XPATH,
+            #     #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+            #     #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
+            #     # )
 
-                # message_area = WebDriverWait(self.bot, 5).until(
-                #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
-                # )
-                time.sleep(2)
-                # message_area = WebDriverWait(self.bot, 10).until(
-                #     EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
-                # )
+            #     # message_area = WebDriverWait(self.bot, 5).until(
+            #     #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
+            #     # )
+            #     time.sleep(2)
+            #     # message_area = WebDriverWait(self.bot, 10).until(
+            #     #     EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+            #     # )
 
                 
-                # message_area.click()
-                    
+            #     # message_area.click()
+
+
+
+
+
+#================================================WE WANT FROM HERE++++=========================+++++++++++++++++++++++++++++++                    
 
                 message_area = WebDriverWait(self.bot, 5)
                 # message_area_element = message_area.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-describedby="Message"][role="textbox"][contenteditable="true"]')))
@@ -2497,23 +2546,51 @@ class SingleInstagramBot:
 
     def logout(self):
         try:
-            profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
-            self.bot.find_element(By.XPATH, profile_xpath).click()
-            time.sleep(1)
+            # profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
+            # self.bot.find_element(By.XPATH, profile_xpath).click()
+            
+            profile_ = WebDriverWait(self.bot, 3).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "span[role='link'][tabindex='-1']"))
+            )
+            profile_.click()
 
-            setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
-            self.bot.find_element(By.XPATH, setting_icon_xpath).click()
             time.sleep(1)
+            print("inside Logout 11111111111111111111111")
+            # setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
+            # self.bot.find_element(By.XPATH, setting_icon_xpath).click()
 
-            logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
-            self.bot.find_element(By.XPATH, logout_xpath).click()
+            try:
+                setting_ = WebDriverWait(self.bot, 3).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']"))
+                )
+                setting_.click()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+            time.sleep(1)
+            print("inside Logout 22222222222222222222222")
+            # logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
+            # self.bot.find_element(By.XPATH, logout_xpath).click()
+
+            try:
+                logout_ = WebDriverWait(self.bot, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[tabindex='0']"))
+                )
+                logout_.click()
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+
+            print("inside Logout 33333333333333333333333")
             time.sleep(2)
         except Exception as e:
             self.logger.error(f"An error occurred during logout: {e}")
 
     def close_browser(self):
         self.logout()
+        print("Logout DONE")
         time.sleep(3)
+        print("Closing Browser")
         self.bot.quit()
 
 def single_send_messages(account):
