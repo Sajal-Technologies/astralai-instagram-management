@@ -2201,6 +2201,7 @@ class SingleInstagramBot:
         }
 
         response = requests.get(url, headers=headers)
+        time.sleep(2)
 
         if response.status_code == 200:
     #         print(response.json())  # or response.text if the content is not JSON
@@ -2234,7 +2235,9 @@ class SingleInstagramBot:
             # self.bot.find_element(By.XPATH,
             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
             user_unique_code = self.get_user_id(recipient)
+            time.sleep(2)
             self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
+
 
 
             time.sleep(2)
