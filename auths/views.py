@@ -18,6 +18,7 @@ import pytz
 import random
 from datetime import datetime, timedelta
 from django.utils import timezone
+import json
 
 # Create your views here.
 
@@ -2190,26 +2191,109 @@ class SingleInstagramBot:
             except Exception as e:
                 time.sleep(1)
 
+    # def get_user_id(self,username):
+    #     url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+
+    #     headers = {
+    #         "accept": "*/*",
+    #         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    #         "x-ig-app-id": "936619743392459",
+    #         "x-requested-with": "XMLHttpRequest"
+    #     }
+
+    #     response = requests.get(url, headers=headers)
+    #     time.sleep(2)
+    #     # print("respnse text :",response.text)
+
+    #     if response.status_code == 200:
+    # #         print(response.json())  # or response.text if the content is not JSON
+    #         return response.json()['data']['user']['eimu_id']
+    #     else:
+    #         return None
+    #         print(f"Failed to retrieve data: {response.status_code}")
+
     def get_user_id(self,username):
-        url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+        try:
+            # Navigate to the search API endpoint
+            self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+
+            # Wait for the page to load
+            time.sleep(5)
+
+            # Extract JSON response from the page source
+            json_response = self.bot.page_source
+
+            # Find the JSON data within the page source
+            start_index = json_response.find('{"users":')
+            end_index = json_response.find('</pre>')
+            json_data = json_response[start_index:end_index]
+
+            # Parse the JSON data
+            data = json.loads(json_data)
+
+            # Extract pk_id values
+            pk_ids = [user['user']['pk_id'] for user in data['users']]
+            print("The pk ids are as :",pk_ids)
+            print(int(pk_ids[0]))
+            return int(pk_ids[0])
+
+
+        # import json
+        # self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+        # json_response = self.bot.page_source
+
+
+        # json_response = requests.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+
+        # try:
+
+        #     data = json.loads(str(json_response))
+
+        #     # Extract the pk_id values
+        #     pk_ids = [user['user']['pk_id'] for user in data['users']]
+        #     print(pk_ids)
+        #     return pk_ids
+        except:
+            print("Error Occured during the fetching of user id")
+            return "Error Occured"
+
+
+
+    def ad(self,user_id):
+        import requests
+
+        url = 'https://www.instagram.com/api/graphql'
 
         headers = {
-            "accept": "*/*",
-            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-            "x-ig-app-id": "936619743392459",
-            "x-requested-with": "XMLHttpRequest"
+            'accept': '*/*',
+            'accept-language': 'en-US,en;q=0.9',
+            'content-type': 'application/x-www-form-urlencoded',
+            'origin': 'https://www.instagram.com',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'x-fb-friendly-name': 'PolarisProfilePageContentQuery',
+            'x-fb-lsd': 'AVr41ZWd_UE',
         }
+        data = {
+                'lsd': 'AVr41ZWd_UE',
+                'variables': f'{{"id":"{user_id}","render_surface":"PROFILE"}}',
+                'server_timestamps': 'true',
+                'doc_id': '25618261841150840',
+            }
+        
+        try:
 
-        response = requests.get(url, headers=headers)
-        time.sleep(2)
-        print("respnse text :",response.text)
+            
+            response = requests.post(url, headers=headers, data=data)
+            print(response.status_code)
+        #     print(response.text)
+            print(response.json()['data']['user']['interop_messaging_user_fbid'])
 
-        if response.status_code == 200:
-    #         print(response.json())  # or response.text if the content is not JSON
-            return response.json()['data']['user']['eimu_id']
-        else:
+            return response.json()['data']['user']['interop_messaging_user_fbid']
+        except:
+            print("Error Occured During Process")
             return None
-            print(f"Failed to retrieve data: {response.status_code}")
 
     def login(self):
         self.bot.get(self.base_url)
@@ -2232,10 +2316,15 @@ class SingleInstagramBot:
         recipient = self.recipients
         message = self.message
 
+
         try:
             # self.bot.find_element(By.XPATH,
             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
-            user_unique_code = self.get_user_id(recipient)
+            
+            user_id = self.get_user_id(recipient)
+            user_unique_code = self.ad(user_id)
+            print("user_unique_code:   ",user_unique_code)
+            # user_unique_code = self.get_user_id(recipient)
             time.sleep(2)
             self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
 
@@ -2555,7 +2644,9 @@ class SingleInstagramBot:
             
             profile_ = WebDriverWait(self.bot, 3).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "span[role='link'][tabindex='-1']"))
+            # EC.element_to_be_clickable((By.XPATH, '//svg[@aria-label="Settings"]'))
             )
+            print("first DONE nfjksdjf")
             profile_.click()
 
             time.sleep(1)
@@ -2568,8 +2659,10 @@ class SingleInstagramBot:
                     EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']"))
                 )
                 setting_.click()
+                print("Second DONE nfjksdjf")
+
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred 11111111111111111: {e}")
 
             time.sleep(1)
             print("inside Logout 22222222222222222222222")
@@ -2577,12 +2670,56 @@ class SingleInstagramBot:
             # self.bot.find_element(By.XPATH, logout_xpath).click()
 
             try:
-                logout_ = WebDriverWait(self.bot, 10).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "button[tabindex='0']"))
-                )
-                logout_.click()
+                # logout_ = WebDriverWait(self.bot, 10).until(
+                #     # EC.element_to_be_clickable((By.CSS_SELECTOR, "button[tabindex='0']"))
+                #     EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]')),
+                # )
+                # logout_.click()
+
+
+                try:
+                    # Try to click the button using CSS Selector
+                    log_out_button = WebDriverWait(self.bot, 10).until(
+                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.xjbqb8w.x1qhh985.xcfux6l.xm0m39n.x1yvgwvq.x13fuv20.x178xt8z.x1ypdohk.xvs91rp.x1evy7pa.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x1wxaq2x.x1iorvi4.x1sxyh0.xjkvuk6.xurb0ha.x2b8uid.x87ps6o.xxymvpz.xh8yej3.x52vrxo.x4gyw5p.x5n08af'))
+                    )
+                    log_out_button.click()
+                    print("Clicked on the element using CSS Selector")
+                except Exception as e_css:
+                    print(f"CSS Selector failed: {e_css}")
+                    
+                    try:
+                        # Try to click the button using XPath
+                        log_out_button = WebDriverWait(self.bot, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]'))
+                        )
+                        log_out_button.click()
+                        print("Clicked on the element using XPath")
+                    except Exception as e_xpath:
+                        print(f"XPath failed: {e_xpath}")
+                        
+                        try:
+                            # Try to click the button using Class Name
+                            log_out_button = WebDriverWait(self.bot, 10).until(
+                                EC.element_to_be_clickable((By.CLASS_NAME, 'xjbqb8w'))
+                            )
+                            log_out_button.click()
+                            print("Clicked on the element using Class Name")
+                        except Exception as e_class:
+                            print(f"Class Name failed: {e_class}")
+                            
+                            try:
+                                # Try to click the button using Partial Link Text
+                                log_out_button = WebDriverWait(self.bot, 10).until(
+                                    EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, 'Log Out'))
+                                )
+                                log_out_button.click()
+                                print("Clicked on the element using Partial Link Text")
+                            except Exception as e_partial_link:
+                                print(f"Partial Link Text failed: {e_partial_link}")
+                                print("All methods failed to click the element")
+                print("Third DONE nfjksdjf")
             except Exception as e:
-                print(f"An error occurred: {e}")
+                print(f"An error occurred 22222222222222222: {e}")
 
 
             print("inside Logout 33333333333333333333333")
