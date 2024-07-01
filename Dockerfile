@@ -26,22 +26,22 @@ RUN CHROME_DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_
 
 # Set up the working directory
 WORKDIR /app
-
 # Copy the current directory contents into the container at /app
-COPY . /app/
+COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entrypoint script
-COPY entrypoint.sh /app/
+# COPY entrypoint.sh /
+# COPY entrypoint.sh /entrypoint.sh
 
 # Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
+# RUN chmod +x /entrypoint.sh
 
 # Expose port 8001 for the Django app
 EXPOSE 8001
 
 # Use the entrypoint script to start the Django app
-ENTRYPOINT ["/app/entrypoint.sh"]
+# ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
