@@ -1163,24 +1163,563 @@ class deleteMessageTemplate(APIView):
 
 
 
-# instabot/views.py
+# # instabot/views.py
+# import time
+# import logging
+# import threading
+# from django.http import JsonResponse
+# from django.views import View
+# from concurrent.futures import ThreadPoolExecutor, as_completed
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.webdriver.common.keys import Keys
+# # import undetected_chromedriver as uc
+# from selenium import webdriver
+# from selenium.webdriver.chrome.service import Service
+# from webdriver_manager.chrome import ChromeDriverManager
+
+# class InstagramBot:
+#     # def __init__(self, username, password, recipients, message):
+#     def __init__(self, username, password, recipients, message, instagram_account, task):
+#         self.username = username
+#         self.password = password
+#         self.recipients = recipients
+#         self.message = message
+#         self.instagram_account = instagram_account
+#         self.task = task
+#         self.base_url = 'https://www.instagram.com/'
+
+#         # options = uc.ChromeOptions()
+#         options = webdriver.ChromeOptions()
+#         # options.headless = True
+#         options.add_argument('--no-sandbox')
+#         options.add_argument('--disable-dev-shm-usage')
+#         options.add_argument('--disable-gpu')
+#         options.add_argument('--disable-extensions')
+#         options.add_argument('--window-size=1200x600')
+#         options.add_argument('--disable-client-side-phishing-detection')
+
+#         # options.binary_location = '/usr/bin/chromedriver' 
+#         # self.bot = uc.Chrome(options=options)
+#         # self.bot = webdriver.Chrome(options=options)
+
+
+#         options.add_argument('--headless')
+#         options.add_argument('--disable-setuid-sandbox')
+#         options.add_argument('--user-data-dir=/tmp/chromium')
+#         options.add_argument('--remote-debugging-port=9222')
+#         logging.basicConfig(level=logging.DEBUG)
+#         print("Options set SUCCESSFULLY")
+
+
+#         CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
+#         # Check if ChromeDriver exists at the specified path
+#         if not os.path.exists(CHROMEDRIVER_PATH):
+#             from webdriver_manager.chrome import ChromeDriverManager
+#             CHROMEDRIVER_PATH = ChromeDriverManager().install()
+
+        
+
+#         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+#         # Ensure that the ChromeDriver path is correct
+#         # try: self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
+
+#         #     print("BOT CREATED SUCCESSFULLY") 
+#         # except Exception as e: 
+#         #     print(f"The Error in bot creation is: {str(e)}")
+
+
+#         try:
+        
+#             chromedriver_path = '/usr/bin/chromedriver'
+#             service = Service(CHROMEDRIVER_PATH)
+#             self.bot = webdriver.Chrome(service=service, options=options)
+
+#             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+#             # self.bot = webdriver.Chrome(options=options)
+#             # self.bot = webdriver.Chrome(chromedriver_path, options=options)
+
+#             print("BOT CREATED SUCCESSFULLY")
+
+#         except Exception as e:
+#             print(f"The Error in bot is: {str(e)}")
+
+
+#         # self.bot = uc.Chrome()
+#         self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
+#         self.popup_thread.start()
+
+#         print("Thread started SUCCESSFULLY")
+#         try:
+#             self.login()
+#             print("Login SUCCESSFULLY")
+#         except Exception as e:
+#             print(f"The error is is --->: {e}")
+#             logging.error(f"Error during login for {self.username}: {e}")
+#             self.bot.quit()
+
+#     def handle_popup(self):
+#         while True:
+#             try:
+#                 not_now_button = WebDriverWait(self.bot, 5).until(
+#                     EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
+#                 )
+#                 not_now_button.click()
+#                 logging.info(f"Popup closed for {self.username}")
+#             except Exception as e:
+#                 time.sleep(1)
+
+#     def login(self):
+#         self.bot.get(self.base_url)
+#         try:
+#             enter_username = WebDriverWait(self.bot, 20).until(
+#                 EC.presence_of_element_located((By.NAME, 'username')))
+#             enter_username.send_keys(self.username)
+
+#             enter_password = WebDriverWait(self.bot, 20).until(
+#                 EC.presence_of_element_located((By.NAME, 'password')))
+#             enter_password.send_keys(self.password)
+#             enter_password.send_keys(Keys.RETURN)
+#             time.sleep(5)
+#         except Exception as e:
+#             print(f"The error2222222222222222 --->: {e}")
+#             logging.error(f"Error entering login credentials: {e}")
+#             # mess=Message.objects.create(
+#             #             instagram_account =self.instagram_account,
+#             #             recipient=self.recipients,
+#             #             content = self.message,
+#             #             scheduled_time = timezone.now(),
+#             #             sent = False,
+#             #             sent_time = timezone.now(),
+#             #             error = f"Error entering login credentials: {e}"
+#             #             )
+#             # self.task.message.add(mess)
+#             # self.task.failed_messages += 1
+#             self.task.error_message = "Failed"
+#             self.task.save()
+#             self.bot.quit()
+#             return #############################################Break
+
+#         time.sleep(3)
+#         try:
+#             # self.bot.find_element(By.XPATH,
+#             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
+            
+#             self.bot.get("https://www.instagram.com/direct/inbox/")
+
+
+#             time.sleep(2)
+#         except Exception as e:
+#             logging.error(f"Error navigating to message section: {e}")
+#             return
+
+#         self.task.status = 'in_progress'
+#         self.task.save()
+
+#         print("self.message 11111111111111111111111111111111111111111111111",self.message)
+#         print("self.recipient222222222222222222222222222222222222222222222",self.recipients)
+
+#         # for recipient in self.recipients:
+#         for recipient, message in zip(self.recipients,self.message[0]):
+#             print("The size of message are:================================================== ",len(self.message))
+#             print(message)
+
+#             print("The size of recipient are: ==================================================",len(self.recipients))
+#             print(recipient)
+#         # for message in messages:
+
+#             try:
+#                 time.sleep(3)
+#                 try:
+#                     new_message_button = WebDriverWait(self.bot, 5).until(
+#                         EC.visibility_of_element_located((By.XPATH,
+#                                                             '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
+#                     )
+#                     new_message_button.click()
+#                     time.sleep(2)
+#                     recipient_input = WebDriverWait(self.bot, 5).until(
+#                         EC.visibility_of_element_located((By.XPATH,
+#                                                             '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
+#                     )
+#                     recipient_input.send_keys(recipient)
+#                     time.sleep(2)
+
+#                     recipient_suggestion = WebDriverWait(self.bot, 5).until(
+#                         EC.visibility_of_element_located((By.XPATH,
+#                                                             '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
+#                     )
+#                     recipient_suggestion.click()
+#                     time.sleep(2)
+
+#                     next_button = WebDriverWait(self.bot, 5).until(
+#                         EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
+#                     )
+#                     next_button.click()
+#                     time.sleep(2)
+#                 except Exception as e:
+#                     mess=Message.objects.create(
+#                         instagram_account =self.instagram_account,
+#                         recipient=recipient, 
+#                         content = message,
+#                         scheduled_time = timezone.now(),
+#                         sent = False,
+#                         sent_time = timezone.now(),
+#                         error = f"Error adding recipient {recipient}: {e}"
+#                         )
+#                     self.task.message.add(mess)
+#                     # self.task.failed_messages += 1
+#                     self.task.save()
+#                     logging.error(f"Error adding recipient {recipient}: {e}")
+#                     continue
+
+#                 try:
+#                     # message_area = WebDriverWait(self.bot, 5).until(
+#                     #     EC.visibility_of_element_located((By.XPATH,
+#                     #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+#                     #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
+#                     # )
+
+#                     # message_area = WebDriverWait(self.bot, 5).until(
+#                     #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
+#                     # )
+#                     time.sleep(2)
+#                     message_area = WebDriverWait(self.bot, 10).until(
+#                         EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+#                     )
+
+                    
+#                     message_area.click()
+                        
+
+#                     # message_area.send_keys(f"{message}")
+
+
+
+#                     time.sleep(1)
+#                     # message_area.send_keys(Keys.ENTER)
+#                     # time.sleep(2)
+
+
+#                     print("The message is prior send message: ",message)
+
+
+#                     message_area.send_keys(message)
+#                     print("The message is AFTER send message: ",message)
+#                     time.sleep(1)
+#                     message_area.send_keys(Keys.RETURN)
+#                     print("The message is AFTER ENTER: ",message)
+#                     time.sleep(2)
+#                     mess=Message.objects.create(
+#                         instagram_account =self.instagram_account, 
+#                         recipient=recipient,
+#                         content = message,
+#                         scheduled_time = timezone.now(),
+#                         sent = True,
+#                         sent_time = timezone.now()
+#                         )
+                    
+#                     mess.sent =True
+#                     mess.save()
+#                     self.task.sent_messages += 1
+#                     self.task.message.add(mess)
+#                     self.task.save()
+#                     time.sleep(1)
+#                 except Exception as e:
+#                     logging.error(f"Error sending message to {recipient}: {e}")
+#                     mess=Message.objects.create(
+#                         instagram_account =self.instagram_account, 
+#                         recipient=recipient,
+#                         content = message,
+#                         scheduled_time = timezone.now(),
+#                         sent = False,
+#                         sent_time = timezone.now(),
+#                         error = f"Error sending message to {recipient}: {e}"
+#                         )
+#                     self.task.message.add(mess)
+#                     self.task.failed_messages += 1
+#                     self.task.save()
+#                     continue
+#                 finally:
+#                     self.bot.refresh()
+#                     time.sleep(2)
+
+#             except Exception as e:
+#                 mess=Message.objects.create(
+#                         instagram_account =self.instagram_account, 
+#                         recipient=recipient,
+#                         content = message,
+#                         scheduled_time = timezone.now(),
+#                         sent = False,
+#                         sent_time = timezone.now(),
+#                         error = f"Error handling message for {recipient}: {e}")
+#                 logging.error(f"Error handling message for {recipient}: {e}")
+
+#                 self.task.message.add(mess)
+#                 self.task.save()
+
+#             minute_ = random.randint(1, 4)
+#             print(f"Sleeping for {minute_} minutes...")
+#             time.sleep(minute_ * 60)
+#             print("Awake now!")
+#         self.task.status = 'completed'
+#         self.task.save()
+
+#     def logout(self):
+#         try:
+#             profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
+#             self.bot.find_element(By.XPATH, profile_xpath).click()
+#             time.sleep(1)
+
+#             setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
+#             self.bot.find_element(By.XPATH, setting_icon_xpath).click()
+#             time.sleep(1)
+
+#             logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
+#             self.bot.find_element(By.XPATH, logout_xpath).click()
+#             time.sleep(2)
+#         except Exception as e:
+#             logging.error(f"An error occurred during logout: {e}")
+
+#     def close_browser(self):
+#         self.logout()
+#         time.sleep(3)
+#         self.bot.quit()
+
+# def send_messages(account):
+#     print("Before Getting all variable")
+#     username = account['username']
+#     password = account['password']
+#     recipients = account['recipients']
+#     message = account['message']
+#     instagram_account = account['instagram_account']
+#     task = account['task']
+#     print("After Getting all variable")
+#     try:
+#         # instagram_bot = InstagramBot(username, password, recipients, message)
+
+#         # instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
+#         print("Before instagram_bot")
+#         instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task)
+#         print("after instagram_bot")
+
+#         instagram_bot.close_browser()
+#         return f"Messages sent from {username} to {recipients}"
+#     except Exception as e:
+#         logging.error(f"An error occurred with account {username}: {e}")
+#         task.status = 'failed'
+#         task.error_message = str(e)
+#         task.save()
+#         return f"Failed to send messages from {username}"
+
+# from django.views.decorators.csrf import csrf_exempt
+
+# class InstagramBotView(APIView):
+
+#     @csrf_exempt
+#     def dispatch(self, *args, **kwargs):
+#         return super().dispatch(*args, **kwargs)
+
+#     def post(self, request):
+#         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+#         instagram_account_id=request.data.get('instagram_account_id')
+
+#         if not instagram_account_id:
+#             return Response({"Message":"Please Provide instagram_account_id"})
+        
+#         recipient_list=request.data.get('recipient_list')
+
+#         if not isinstance(recipient_list, list):
+#             return Response({"Message": "Recipient_list must be a list. ex- ['recipient1', 'recipient2', 'recipient3']"})
+
+#         if not recipient_list:
+#             return Response({"Message":"Recipient_list not found!!!!"})
+        
+#         custom_message = request.data.get("custom_message")
+#         message_list=request.data.get('message_list')
+
+#         # if not isinstance(message_list, list):
+#         #     return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
+
+#         # if not message_list:
+#         #     return Response({"Message":"message_list not found!!!!"})
+        
+
+#         ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+
+#         # total_messages = sum(len(messages) for messages in message_list)
+
+#         total_messages = len(recipient_list)
+
+#         task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
+
+
+#         response_data = {'task_id': task.id}
+#         print("Towards thread")
+#         # Process messages in background
+#         executor = ThreadPoolExecutor(max_workers=1)
+#         executor.submit(self.process_messages, request.data, ins, task)
+#         print("Afterwards thread")
+
+#         return JsonResponse(response_data)
+
+
+#     def process_messages(self, data, instagram_account, task):
+#         print("HIiiiiiiiiiiiiiiii")
+        
+#         message_list=data.get('message_list')
+#         recipient_list=data.get('recipient_list')
+#         custom_message = data.get("custom_message")
+#         print("Byeeeeeeeeeeeeeeeeeeeeeeee")
+#         print("recipient_list :",recipient_list)
+#         print("custom_message :",custom_message)
+#         if not custom_message:
+
+#             messages = []
+
+#             date = data.get('date', 'Date')  # Default date if not provided
+#             name = data.get('name', 'Instagram User')  # Default name if not provided
+#             # company_service = data.get('company_service', 'Services')  # Default service if not provided
+#             username = data.get('username', 'username_not_provided')
+#             # for templates in message_list:
+#             #     if not isinstance(templates, list) or len(templates) == 0:
+#             #         return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
+#             print("1111111111111111111111111111111")
+#             template_messages = []  # Initialize a list to store messages for current set of templates
+#             for i in range(len(name)):
+#                 try:
+#                     # Fetch message_template object from the database
+#                     message_template = MessageTemplate.objects.get(id=message_list)
+#                     print("The message template is as fllows: ",message_template)
+
+#                     # Retrieve dynamic data from request or provide defaults
+#                     # date = data.get('date', 'Date')  # Default date if not provided
+#                     # name = data.get('name', 'Instagram User')  # Default name if not provided
+#                     # # company_service = data.get('company_service', 'Services')  # Default service if not provided
+#                     # username = data.get('username', 'username_not_provided')  # Default company name if not provided
+#                     # # address = data.get('address', '')  # Default address if not provided
+#                     print("222222222222222222222222222")
+#                     # Replace placeholders in message template with dynamic data
+#                     message_content = message_template.template_content.format(
+#                         name=name[i],
+#                         username=username[i],
+#                         # company_service=company_service,
+#                         date=date,
+#                         # address=address
+#                     )
+
+#                     print("The message content :",message_content)
+
+
+#                     # Add formatted message content to the template_messages list
+#                     template_messages.append(message_content)
+
+#                 except MessageTemplate.DoesNotExist:
+#                     return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
+
+#             # Append the messages for current templates set to the main messages list
+#             messages.append(template_messages)
+        
+#         else:
+#             print("333333333333333333333333333333")
+#             date = data.get('date', 'Date')  # Default date if not provided
+#             name = data.get('name', 'Instagram User')  # Default name if not provided
+#             # company_service = data.get('company_service', 'Services')  # Default service if not provided
+#             username = data.get('username', 'username_not_provided')
+#             print(name)
+#             messages=[]
+#             for i in range(len(name)):
+#                 print("44444444444444444444444444")
+#                 try:
+#                     messages_ = str(custom_message).format(
+#                         name=name[i],
+#                         username=username[i],
+#                         # company_service=company_service,
+#                         date=date,
+#                         # address=address
+#                     )
+#                     print("555555555555555555555555555555")
+#                     messages.append([messages_])
+#                 except:
+#                     print("6666666666666666666666666666666")
+#                     messages.append(custom_message)
+#             messages = [messages]
+                    
+
+
+
+
+
+#         # ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+
+#         # total_messages = sum(len(messages) for messages in message_list)
+
+#         # task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
+#         print("77777777777777777777777777")
+#         username=instagram_account.username
+#         password=instagram_account.password
+
+#         # print("The messages detail arre as folows: ",messages)
+
+#         # accounts = [
+#         #     {'username': username, 'password': password, 'recipients': recipient_list,
+#         #      'message': messages},
+#         #     # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
+#         #     #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
+#         #     #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
+#         #     #              ["This is the third Successfully test"]]}
+#         # ]
+
+#         accounts = [
+#             {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task},
+#             # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
+#             #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
+#             #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
+#             #              ["This is the third Successfully test"]]}
+#         ]
+
+
+#         # print("The account detail is: ",accounts)
+#         print("8888888888888888888888888888888888")
+#         max_simultaneous_logins = 5  # Set this to the number of simultaneous logins you want
+#         print("Before thread")
+#         results = []
+#         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
+#             futures = [executor.submit(send_messages, account) for account in accounts]
+#             # print("The futures are as follows :",futures)
+#             for future in as_completed(futures):
+#                 results.append(future.result())
+
+#         task.status = 'completed'
+#         task.save()
+#         print("After thread")
+#         # return JsonResponse({'results': results})
+#         # return JsonResponse({'results': results, 'task_id': task.id})
+
+
+
+
+
+
 import time
 import logging
 import threading
 from django.http import JsonResponse
 from django.views import View
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-# import undetected_chromedriver as uc
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from instagrapi import Client
+from instagrapi.exceptions import ClientError, ClientLoginRequired
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import instagram_accounts, Message, Task, MessageTemplate
+from django.utils import timezone
+import os
 
 class InstagramBot:
-    # def __init__(self, username, password, recipients, message):
     def __init__(self, username, password, recipients, message, instagram_account, task):
         self.username = username
         self.password = password
@@ -1188,304 +1727,79 @@ class InstagramBot:
         self.message = message
         self.instagram_account = instagram_account
         self.task = task
-        self.base_url = 'https://www.instagram.com/'
+        self.client = Client()
 
-        # options = uc.ChromeOptions()
-        options = webdriver.ChromeOptions()
-        # options.headless = True
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-extensions')
-        options.add_argument('--window-size=1200x600')
-        options.add_argument('--disable-client-side-phishing-detection')
-
-        # options.binary_location = '/usr/bin/chromedriver' 
-        # self.bot = uc.Chrome(options=options)
-        # self.bot = webdriver.Chrome(options=options)
-
-
-        options.add_argument('--headless')
-        options.add_argument('--disable-setuid-sandbox')
-        options.add_argument('--user-data-dir=/tmp/chromium')
-        options.add_argument('--remote-debugging-port=9222')
         logging.basicConfig(level=logging.DEBUG)
-        print("Options set SUCCESSFULLY")
-
-
-        CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
-        # Check if ChromeDriver exists at the specified path
-        if not os.path.exists(CHROMEDRIVER_PATH):
-            from webdriver_manager.chrome import ChromeDriverManager
-            CHROMEDRIVER_PATH = ChromeDriverManager().install()
-
-        
-
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-        # Ensure that the ChromeDriver path is correct
-        # try: self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
-
-        #     print("BOT CREATED SUCCESSFULLY") 
-        # except Exception as e: 
-        #     print(f"The Error in bot creation is: {str(e)}")
-
-
         try:
-        
-            chromedriver_path = '/usr/bin/chromedriver'
-            service = Service(CHROMEDRIVER_PATH)
-            self.bot = webdriver.Chrome(service=service, options=options)
-
-            # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            # self.bot = webdriver.Chrome(options=options)
-            # self.bot = webdriver.Chrome(chromedriver_path, options=options)
-
-            print("BOT CREATED SUCCESSFULLY")
-
-        except Exception as e:
-            print(f"The Error in bot is: {str(e)}")
-
-
-        # self.bot = uc.Chrome()
-        self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
-        self.popup_thread.start()
-
-        print("Thread started SUCCESSFULLY")
-        try:
-            self.login()
-            print("Login SUCCESSFULLY")
-        except Exception as e:
-            print(f"The error is is --->: {e}")
-            logging.error(f"Error during login for {self.username}: {e}")
-            self.bot.quit()
-
-    def handle_popup(self):
-        while True:
-            try:
-                not_now_button = WebDriverWait(self.bot, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
-                )
-                not_now_button.click()
-                logging.info(f"Popup closed for {self.username}")
-            except Exception as e:
-                time.sleep(1)
-
-    def login(self):
-        self.bot.get(self.base_url)
-        try:
-            enter_username = WebDriverWait(self.bot, 20).until(
-                EC.presence_of_element_located((By.NAME, 'username')))
-            enter_username.send_keys(self.username)
-
-            enter_password = WebDriverWait(self.bot, 20).until(
-                EC.presence_of_element_located((By.NAME, 'password')))
-            enter_password.send_keys(self.password)
-            enter_password.send_keys(Keys.RETURN)
-            time.sleep(5)
-        except Exception as e:
-            print(f"The error2222222222222222 --->: {e}")
-            logging.error(f"Error entering login credentials: {e}")
-            # mess=Message.objects.create(
-            #             instagram_account =self.instagram_account,
-            #             recipient=self.recipients,
-            #             content = self.message,
-            #             scheduled_time = timezone.now(),
-            #             sent = False,
-            #             sent_time = timezone.now(),
-            #             error = f"Error entering login credentials: {e}"
-            #             )
-            # self.task.message.add(mess)
-            # self.task.failed_messages += 1
-            self.task.error_message = "Failed"
+            self.client.login(username, password)
+            print("Login SUCCESSFUL")
+        except ClientLoginRequired as e:
+            print(f"Login required: {e}")
+            logging.error(f"Login required for {self.username}: {e}")
+            self.task.error_message = "Login required"
             self.task.save()
-            self.bot.quit()
-            return #############################################Break
-
-        time.sleep(3)
-        try:
-            # self.bot.find_element(By.XPATH,
-            #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
-            
-            self.bot.get("https://www.instagram.com/direct/inbox/")
-
-
-            time.sleep(2)
-        except Exception as e:
-            logging.error(f"Error navigating to message section: {e}")
             return
-
+        except ClientError as e:
+            print(f"Client error: {e}")
+            logging.error(f"Client error for {self.username}: {e}")
+            self.task.error_message = "Client error"
+            self.task.save()
+            return
+        
         self.task.status = 'in_progress'
         self.task.save()
+        self.send_messages()
 
-        print("self.message 11111111111111111111111111111111111111111111111",self.message)
-        print("self.recipient222222222222222222222222222222222222222222222",self.recipients)
-
-        # for recipient in self.recipients:
-        for recipient, message in zip(self.recipients,self.message[0]):
-            print("The size of message are:================================================== ",len(self.message))
-            print(message)
-
-            print("The size of recipient are: ==================================================",len(self.recipients))
-            print(recipient)
-        # for message in messages:
-
+    def send_messages(self):
+        for recipient, message in zip(self.recipients, self.message[0]):
             try:
-                time.sleep(3)
-                try:
-                    new_message_button = WebDriverWait(self.bot, 5).until(
-                        EC.visibility_of_element_located((By.XPATH,
-                                                            '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div'))
-                    )
-                    new_message_button.click()
-                    time.sleep(2)
-                    recipient_input = WebDriverWait(self.bot, 5).until(
-                        EC.visibility_of_element_located((By.XPATH,
-                                                            '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input'))
-                    )
-                    recipient_input.send_keys(recipient)
-                    time.sleep(2)
-
-                    recipient_suggestion = WebDriverWait(self.bot, 5).until(
-                        EC.visibility_of_element_located((By.XPATH,
-                                                            '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]'))
-                    )
-                    recipient_suggestion.click()
-                    time.sleep(2)
-
-                    next_button = WebDriverWait(self.bot, 5).until(
-                        EC.visibility_of_element_located((By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]'))
-                    )
-                    next_button.click()
-                    time.sleep(2)
-                except Exception as e:
-                    mess=Message.objects.create(
-                        instagram_account =self.instagram_account,
-                        recipient=recipient, 
-                        content = message,
-                        scheduled_time = timezone.now(),
-                        sent = False,
-                        sent_time = timezone.now(),
-                        error = f"Error adding recipient {recipient}: {e}"
-                        )
-                    self.task.message.add(mess)
-                    # self.task.failed_messages += 1
-                    self.task.save()
-                    logging.error(f"Error adding recipient {recipient}: {e}")
-                    continue
-
-                try:
-                    # message_area = WebDriverWait(self.bot, 5).until(
-                    #     EC.visibility_of_element_located((By.XPATH,
-                    #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
-                    #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
-                    # )
-
-                    # message_area = WebDriverWait(self.bot, 5).until(
-                    #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
-                    # )
-                    time.sleep(2)
-                    message_area = WebDriverWait(self.bot, 10).until(
-                        EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
-                    )
-
-                    
-                    message_area.click()
-                        
-
-                    # message_area.send_keys(f"{message}")
-
-
-
-                    time.sleep(1)
-                    # message_area.send_keys(Keys.ENTER)
-                    # time.sleep(2)
-
-
-                    print("The message is prior send message: ",message)
-
-
-                    message_area.send_keys(message)
-                    print("The message is AFTER send message: ",message)
-                    time.sleep(1)
-                    message_area.send_keys(Keys.RETURN)
-                    print("The message is AFTER ENTER: ",message)
-                    time.sleep(2)
-                    mess=Message.objects.create(
-                        instagram_account =self.instagram_account, 
-                        recipient=recipient,
-                        content = message,
-                        scheduled_time = timezone.now(),
-                        sent = True,
-                        sent_time = timezone.now()
-                        )
-                    
-                    mess.sent =True
-                    mess.save()
-                    self.task.sent_messages += 1
-                    self.task.message.add(mess)
-                    self.task.save()
-                    time.sleep(1)
-                except Exception as e:
-                    logging.error(f"Error sending message to {recipient}: {e}")
-                    mess=Message.objects.create(
-                        instagram_account =self.instagram_account, 
-                        recipient=recipient,
-                        content = message,
-                        scheduled_time = timezone.now(),
-                        sent = False,
-                        sent_time = timezone.now(),
-                        error = f"Error sending message to {recipient}: {e}"
-                        )
-                    self.task.message.add(mess)
-                    self.task.failed_messages += 1
-                    self.task.save()
-                    continue
-                finally:
-                    self.bot.refresh()
-                    time.sleep(2)
-
-            except Exception as e:
-                mess=Message.objects.create(
-                        instagram_account =self.instagram_account, 
-                        recipient=recipient,
-                        content = message,
-                        scheduled_time = timezone.now(),
-                        sent = False,
-                        sent_time = timezone.now(),
-                        error = f"Error handling message for {recipient}: {e}")
-                logging.error(f"Error handling message for {recipient}: {e}")
-
+                user_id = self.client.user_id_from_username(recipient)
+                self.client.direct_send(message, [user_id])
+                print(f"Message sent to {recipient}")
+                mess = Message.objects.create(
+                    instagram_account=self.instagram_account,
+                    recipient=recipient,
+                    content=message,
+                    scheduled_time=timezone.now(),
+                    sent=True,
+                    sent_time=timezone.now()
+                )
+                self.task.sent_messages += 1
                 self.task.message.add(mess)
                 self.task.save()
+                time.sleep(2)  # Add delay to avoid rate limits
+            except ClientError as e:
+                print(f"Error sending message to {recipient}: {e}")
+                logging.error(f"Error sending message to {recipient}: {e}")
+                mess = Message.objects.create(
+                    instagram_account=self.instagram_account,
+                    recipient=recipient,
+                    content=message,
+                    scheduled_time=timezone.now(),
+                    sent=False,
+                    sent_time=timezone.now(),
+                    error=f"Error sending message to {recipient}: {e}"
+                )
+                self.task.message.add(mess)
+                self.task.failed_messages += 1
+                self.task.save()
+                continue
+            finally:
+                minute_ = random.randint(1, 4)
+                print(f"Sleeping for {minute_} minutes...")
+                time.sleep(minute_ * 60)
+                print("Awake now!")
 
-            minute_ = random.randint(1, 4)
-            print(f"Sleeping for {minute_} minutes...")
-            time.sleep(minute_ * 60)
-            print("Awake now!")
         self.task.status = 'completed'
         self.task.save()
+        self.logout()
 
     def logout(self):
         try:
-            profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
-            self.bot.find_element(By.XPATH, profile_xpath).click()
-            time.sleep(1)
-
-            setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
-            self.bot.find_element(By.XPATH, setting_icon_xpath).click()
-            time.sleep(1)
-
-            logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
-            self.bot.find_element(By.XPATH, logout_xpath).click()
-            time.sleep(2)
-        except Exception as e:
+            self.client.logout()
+            print("Logged out successfully!")
+        except ClientError as e:
             logging.error(f"An error occurred during logout: {e}")
-
-    def close_browser(self):
-        self.logout()
-        time.sleep(3)
-        self.bot.quit()
 
 def send_messages(account):
     print("Before Getting all variable")
@@ -1497,14 +1811,7 @@ def send_messages(account):
     task = account['task']
     print("After Getting all variable")
     try:
-        # instagram_bot = InstagramBot(username, password, recipients, message)
-
-        # instagram_bot = InstagramBot(username, password, recipients, message, instagram_account)
-        print("Before instagram_bot")
         instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task)
-        print("after instagram_bot")
-
-        instagram_bot.close_browser()
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
@@ -1512,8 +1819,6 @@ def send_messages(account):
         task.error_message = str(e)
         task.save()
         return f"Failed to send messages from {username}"
-
-from django.views.decorators.csrf import csrf_exempt
 
 class InstagramBotView(APIView):
 
@@ -1524,180 +1829,93 @@ class InstagramBotView(APIView):
     def post(self, request):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-        instagram_account_id=request.data.get('instagram_account_id')
+        instagram_account_id = request.data.get('instagram_account_id')
 
         if not instagram_account_id:
-            return Response({"Message":"Please Provide instagram_account_id"})
+            return Response({"Message": "Please Provide instagram_account_id"})
         
-        recipient_list=request.data.get('recipient_list')
+        recipient_list = request.data.get('recipient_list')
 
         if not isinstance(recipient_list, list):
             return Response({"Message": "Recipient_list must be a list. ex- ['recipient1', 'recipient2', 'recipient3']"})
 
         if not recipient_list:
-            return Response({"Message":"Recipient_list not found!!!!"})
+            return Response({"Message": "Recipient_list not found!!!!"})
         
         custom_message = request.data.get("custom_message")
-        message_list=request.data.get('message_list')
+        message_list = request.data.get('message_list')
 
-        # if not isinstance(message_list, list):
-        #     return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
-
-        # if not message_list:
-        #     return Response({"Message":"message_list not found!!!!"})
-        
-
-        ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
-
-        # total_messages = sum(len(messages) for messages in message_list)
-
+        ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
         total_messages = len(recipient_list)
-
         task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
-
-
         response_data = {'task_id': task.id}
-        print("Towards thread")
-        # Process messages in background
+
         executor = ThreadPoolExecutor(max_workers=1)
         executor.submit(self.process_messages, request.data, ins, task)
-        print("Afterwards thread")
 
         return JsonResponse(response_data)
 
-
     def process_messages(self, data, instagram_account, task):
-        print("HIiiiiiiiiiiiiiiii")
-        
-        message_list=data.get('message_list')
-        recipient_list=data.get('recipient_list')
+        message_list = data.get('message_list')
+        recipient_list = data.get('recipient_list')
         custom_message = data.get("custom_message")
-        print("Byeeeeeeeeeeeeeeeeeeeeeeee")
-        print("recipient_list :",recipient_list)
-        print("custom_message :",custom_message)
+
         if not custom_message:
-
             messages = []
-
-            date = data.get('date', 'Date')  # Default date if not provided
-            name = data.get('name', 'Instagram User')  # Default name if not provided
-            # company_service = data.get('company_service', 'Services')  # Default service if not provided
+            date = data.get('date', 'Date')
+            name = data.get('name', 'Instagram User')
             username = data.get('username', 'username_not_provided')
-            # for templates in message_list:
-            #     if not isinstance(templates, list) or len(templates) == 0:
-            #         return Response({"Message": "Each item in message_list must be a non-empty list of template IDs"}, status=400)
-            print("1111111111111111111111111111111")
-            template_messages = []  # Initialize a list to store messages for current set of templates
+            template_messages = []
             for i in range(len(name)):
                 try:
-                    # Fetch message_template object from the database
                     message_template = MessageTemplate.objects.get(id=message_list)
-                    print("The message template is as fllows: ",message_template)
-
-                    # Retrieve dynamic data from request or provide defaults
-                    # date = data.get('date', 'Date')  # Default date if not provided
-                    # name = data.get('name', 'Instagram User')  # Default name if not provided
-                    # # company_service = data.get('company_service', 'Services')  # Default service if not provided
-                    # username = data.get('username', 'username_not_provided')  # Default company name if not provided
-                    # # address = data.get('address', '')  # Default address if not provided
-                    print("222222222222222222222222222")
-                    # Replace placeholders in message template with dynamic data
                     message_content = message_template.template_content.format(
                         name=name[i],
                         username=username[i],
-                        # company_service=company_service,
                         date=date,
-                        # address=address
                     )
-
-                    print("The message content :",message_content)
-
-
-                    # Add formatted message content to the template_messages list
                     template_messages.append(message_content)
-
                 except MessageTemplate.DoesNotExist:
                     return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
-
-            # Append the messages for current templates set to the main messages list
             messages.append(template_messages)
-        
         else:
-            print("333333333333333333333333333333")
-            date = data.get('date', 'Date')  # Default date if not provided
-            name = data.get('name', 'Instagram User')  # Default name if not provided
-            # company_service = data.get('company_service', 'Services')  # Default service if not provided
+            date = data.get('date', 'Date')
+            name = data.get('name', 'Instagram User')
             username = data.get('username', 'username_not_provided')
-            print(name)
-            messages=[]
+            messages = []
             for i in range(len(name)):
-                print("44444444444444444444444444")
                 try:
                     messages_ = str(custom_message).format(
                         name=name[i],
                         username=username[i],
-                        # company_service=company_service,
                         date=date,
-                        # address=address
                     )
-                    print("555555555555555555555555555555")
                     messages.append([messages_])
                 except:
-                    print("6666666666666666666666666666666")
                     messages.append(custom_message)
             messages = [messages]
-                    
 
-
-
-
-
-        # ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
-
-        # total_messages = sum(len(messages) for messages in message_list)
-
-        # task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
-        print("77777777777777777777777777")
-        username=instagram_account.username
-        password=instagram_account.password
-
-        # print("The messages detail arre as folows: ",messages)
-
-        # accounts = [
-        #     {'username': username, 'password': password, 'recipients': recipient_list,
-        #      'message': messages},
-        #     # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
-        #     #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
-        #     #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
-        #     #              ["This is the third Successfully test"]]}
-        # ]
+        username = instagram_account.username
+        password = instagram_account.password
 
         accounts = [
             {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task},
-            # {'username': username, 'password': password, 'recipients': ['adilalpha1', 'adilwebsite01', 'adilalpha1'],
-            #  'message': [["This is the 1 Successfully test", "This is the 2 Successfully test"],
-            #              ["This is the 3 Successfully test", "This is the 4 Successfully test"],
-            #              ["This is the third Successfully test"]]}
         ]
 
-
-        # print("The account detail is: ",accounts)
-        print("8888888888888888888888888888888888")
-        max_simultaneous_logins = 5  # Set this to the number of simultaneous logins you want
-        print("Before thread")
+        max_simultaneous_logins = 5
         results = []
         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
             futures = [executor.submit(send_messages, account) for account in accounts]
-            # print("The futures are as follows :",futures)
             for future in as_completed(futures):
                 results.append(future.result())
 
         task.status = 'completed'
         task.save()
-        print("After thread")
-        # return JsonResponse({'results': results})
-        # return JsonResponse({'results': results, 'task_id': task.id})
+
+
+
+
+
 
 
 #----------------------------------------------------------------Instagram Message View--------------------------------------------------------
@@ -1967,6 +2185,844 @@ class GetMessagewithtime(APIView):
 
 
 
+# class SingleInstaMessageView(APIView):
+
+#     @csrf_exempt
+#     def dispatch(self, *args, **kwargs):
+#         return super().dispatch(*args, **kwargs)
+
+#     def post(self, request):
+#         # self.logger.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+#         instagram_account_id=request.data.get('instagram_account_id')
+
+#         if not instagram_account_id:
+#             return Response({"Message":"Please Provide instagram_account_id"})
+        
+#         recipient_list=request.data.get('recipient_list')
+
+#         # if not isinstance(recipient_list, list):
+#         #     return Response({"Message": "Recipient must be a list. ex- ['recipient1', 'recipient2', 'recipient3']"})
+
+#         if not recipient_list:
+#             return Response({"Message":"Recipient not found!!!!"})
+        
+
+#         message_list=request.data.get('message_list')
+
+#         custom_message=request.data.get('custom_message')
+
+#         # if not isinstance(message_list, list):
+#         #     return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
+
+#         if not message_list and not custom_message:
+#             return Response({"Message":"message not found!!!!"})
+        
+#         if not custom_message:
+#             # template_id for templates:
+#             try:
+#                 # Fetch message_template object from the database
+#                 message_template = MessageTemplate.objects.get(id=message_list)
+#                 print("The message template is as fllows: ",message_template)
+
+#                 # Retrieve dynamic data from request or provide defaults
+#                 date = request.data.get('date', 'Date')  # Default date if not provided
+#                 name = request.data.get('name', 'Instagram User')  # Default name if not provided
+#                 # company_service = request.data.get('company_service', 'Services')  # Default service if not provided
+#                 username = request.data.get('username', 'username_not_provided')  # Default company name if not provided
+#                 # address = request.data.get('address', '')  # Default address if not provided
+
+#                 # Replace placeholders in message template with dynamic data
+#                 message_content = message_template.template_content.format(
+#                     name=name[0],
+#                     username=username[0],
+#                     date=date,
+#                 )
+
+#                 print("The message content :",message_content)
+
+
+#                 # Add formatted message content to the template_messages list
+#                 # message_content
+
+#             except MessageTemplate.DoesNotExist:
+#                 return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
+#         else:
+
+#             try:
+#                 date = request.data.get('date', 'Date')  # Default date if not provided
+#                 name = request.data.get('name', 'Instagram User')  # Default name if not provided
+#                 username = request.data.get('username', 'username_not_provided')
+#                 message_contents = custom_message.format(
+#                         name=name[0],
+#                         username=username[0],
+#                         date=date
+#                     )
+#                 message_content = message_contents
+#             except:    
+
+#                 message_content = custom_message
+
+#             # message_content = custom_message
+
+#         ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+#         if not ins:
+#             return Response({"Message": "Instagram account not found"}, status=404)
+
+#         username=ins.username
+#         password=ins.password
+
+      
+#         accounts = [
+#             {'username': username, 'password': password, 'recipients': recipient_list[0], 'message': message_content, 'instagram_account': ins}
+#         ]
+
+
+#         # print("The account detail is: ",accounts)
+
+#         max_simultaneous_logins = 10  # Set this to the number of simultaneous logins you want
+
+#         results = []
+#         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
+#             futures = [executor.submit(single_send_messages, account) for account in accounts]
+#             # print("The futures are as follows :",futures)
+#             for future in as_completed(futures):
+#                 results.append(future.result())
+#         return JsonResponse({'results': results})
+
+# from selenium.webdriver.common.action_chains import ActionChains
+# import undetected_chromedriver as uc  # Import undetected_chromedriver
+# from selenium.common.exceptions import TimeoutException, NoSuchElementException
+# import requests
+
+# class SingleInstagramBot:
+#     # def __init__(self, username, password, recipients, message):
+#     def __init__(self, username, password, recipients, message, instagram_account):
+#         self.username = username
+#         self.password = password
+#         self.recipients = recipients
+#         self.message = message
+#         self.instagram_account = instagram_account
+#         self.base_url = 'https://www.instagram.com/'
+
+#         # options = uc.ChromeOptions()
+#         # options = webdriver.ChromeOptions()
+#         options = uc.ChromeOptions()
+#         # options.headless = True
+#         options.add_argument('--no-sandbox')
+#         options.add_argument('--disable-dev-shm-usage')
+#         options.add_argument('--disable-gpu')
+#         options.add_argument('--disable-extensions')
+#         # options.add_argument('--window-size=1366×768')
+#         options.add_argument("--window-size=1920,1080")
+#         options.add_argument('--disable-client-side-phishing-detection')
+
+#         # options.binary_location = '/usr/bin/chromedriver' 
+#         # self.bot = uc.Chrome(options=options)
+#         # self.bot = webdriver.Chrome(options=options)
+
+
+#         options.add_argument('--headless')
+#         options.add_argument('--disable-setuid-sandbox')
+#         # options.add_argument('--user-data-dir=/tmp/chromium')
+#         options.add_argument('--remote-debugging-port=9222')
+#         # logging.basicConfig(level=logging.DEBUG)
+
+#          # Initialize custom logger
+#         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
+#         self.logger.setLevel(logging.INFO)
+#         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+#         stream_handler = logging.StreamHandler()
+#         stream_handler.setFormatter(formatter)
+
+#         class FilterOutSpecificWarnings(logging.Filter):
+#             def filter(self, record):
+#                 # Filter out the warnings you want to suppress
+#                 message = record.getMessage()
+#                 if "Permissions-Policy header: Unrecognized feature: 'battery'" in message \
+#                    or "Permissions-Policy header: Unrecognized feature: 'usb-unrestricted'" in message:
+#                     return False  # Return False to suppress these log records
+#                 return True
+
+#         stream_handler.addFilter(FilterOutSpecificWarnings())
+#         self.logger.addHandler(stream_handler)
+#         print("Options set SUCCESSFULLY")
+
+
+#         CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
+#         # Check if ChromeDriver exists at the specified path
+#         if not os.path.exists(CHROMEDRIVER_PATH):
+#             from webdriver_manager.chrome import ChromeDriverManager
+#             CHROMEDRIVER_PATH = ChromeDriverManager().install()
+
+        
+
+#         # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+#         # Ensure that the ChromeDriver path is correct
+#         # try: self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
+
+#         #     print("BOT CREATED SUCCESSFULLY") 
+#         # except Exception as e: 
+#         #     print(f"The Error in bot creation is: {str(e)}")
+
+
+#         try:
+
+#             chromedriver_path = '/usr/bin/chromedriver'
+#             service = Service(CHROMEDRIVER_PATH)
+#             # self.bot = webdriver.Chrome(service=service, options=options)
+#             self.bot = uc.Chrome(options=options)
+
+#             # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+#             # self.bot = webdriver.Chrome(options=options)
+#             # self.bot = webdriver.Chrome(chromedriver_path, options=options)
+
+#             print("BOT CREATED SUCCESSFULLY")
+
+#         except Exception as e:
+#             print(f"The Error in bot is: {str(e)}")
+
+
+#         # self.bot = uc.Chrome()
+#         self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
+#         self.popup_thread.start()
+
+#         print("Thread started SUCCESSFULLY")
+#         try:
+#             self.login()
+#             print("Login SUCCESSFULLY")
+#         except Exception as e:
+#             print(f"The error is is --->: {e}")
+#             self.logger.error(f"Error during login for {self.username}: {e}")
+#             self.bot.quit()
+
+#     def handle_popup(self):
+#         while True:
+#             try:
+#                 not_now_button = WebDriverWait(self.bot, 5).until(
+#                     EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
+#                 )
+#                 not_now_button.click()
+#                 self.logger.info(f"Popup closed for {self.username}")
+#             except Exception as e:
+#                 time.sleep(1)
+
+#     # def get_user_id(self,username):
+#     #     url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+
+#     #     headers = {
+#     #         "accept": "*/*",
+#     #         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+#     #         "x-ig-app-id": "936619743392459",
+#     #         "x-requested-with": "XMLHttpRequest"
+#     #     }
+
+#     #     response = requests.get(url, headers=headers)
+#     #     time.sleep(2)
+#     #     # print("respnse text :",response.text)
+
+#     #     if response.status_code == 200:
+#     # #         print(response.json())  # or response.text if the content is not JSON
+#     #         return response.json()['data']['user']['eimu_id']
+#     #     else:
+#     #         return None
+#     #         print(f"Failed to retrieve data: {response.status_code}")
+
+#     def get_user_id(self,username):
+#         try:
+#             # Navigate to the search API endpoint
+#             self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+
+#             # Wait for the page to load
+#             time.sleep(5)
+
+#             # Extract JSON response from the page source
+#             json_response = self.bot.page_source
+
+#             # Find the JSON data within the page source
+#             start_index = json_response.find('{"users":')
+#             end_index = json_response.find('</pre>')
+#             json_data = json_response[start_index:end_index]
+
+#             # Parse the JSON data
+#             data = json.loads(json_data)
+
+#             # Extract pk_id values
+#             pk_ids = [user['user']['pk_id'] for user in data['users']]
+#             print("The pk ids are as :",pk_ids)
+#             print(int(pk_ids[0]))
+#             return int(pk_ids[0])
+
+
+#         # import json
+#         # self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+#         # json_response = self.bot.page_source
+
+
+#         # json_response = requests.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
+
+#         # try:
+
+#         #     data = json.loads(str(json_response))
+
+#         #     # Extract the pk_id values
+#         #     pk_ids = [user['user']['pk_id'] for user in data['users']]
+#         #     print(pk_ids)
+#         #     return pk_ids
+#         except:
+#             print("Error Occured during the fetching of user id")
+#             return "Error Occured"
+
+
+
+#     def ad(self,user_id):
+#         import requests
+
+#         url = 'https://www.instagram.com/api/graphql'
+
+#         headers = {
+#             'accept': '*/*',
+#             'accept-language': 'en-US,en;q=0.9',
+#             'content-type': 'application/x-www-form-urlencoded',
+#             'origin': 'https://www.instagram.com',
+#             'sec-fetch-mode': 'cors',
+#             'sec-fetch-site': 'same-origin',
+#             'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+#             'x-fb-friendly-name': 'PolarisProfilePageContentQuery',
+#             'x-fb-lsd': 'AVr41ZWd_UE',
+#         }
+#         data = {
+#                 'lsd': 'AVr41ZWd_UE',
+#                 'variables': f'{{"id":"{user_id}","render_surface":"PROFILE"}}',
+#                 'server_timestamps': 'true',
+#                 'doc_id': '25618261841150840',
+#             }
+        
+#         try:
+
+            
+#             response = requests.post(url, headers=headers, data=data)
+#             print(response.status_code)
+#         #     print(response.text)
+#             print(response.json()['data']['user']['interop_messaging_user_fbid'])
+
+#             return response.json()['data']['user']['interop_messaging_user_fbid']
+#         except:
+#             print("Error Occured During Process")
+#             return None
+        
+#     def get_all_user(self,username, cookies):
+#         # Define the URL and updated cookies
+#         url = f'https://www.instagram.com/web/search/topsearch/?query={username}'
+
+#         # cookies = {'rur': '"CCO\\05464736011245\\0541751121068:01f7fc95e3ff14d77771115195eb34e8741fe6ee5e852032dad50bef6b4e299fd42ce06f"', 'ds_user_id': '64736011245', 'csrftoken': 'Me5udPTxg64s9YLHImsFZy6L18NbwlY3', 'datr': 'JMl-Zjbdap2Ifo2R5pc_PPnn', 'ig_did': '6A6C31B1-DF71-4DCD-A428-00B9D24C4BB4', 'sessionid': '64736011245%3ArtfRByw809pNAl%3A10%3AAYdRcUIh5PGuz67IgY3669NMIFQzw_hfKvQ3zuucXQ', 'ps_n': '1', 'dpr': '1.25', 'ps_l': '1', 'mid': 'Zn7JJAALAAEOLRonIIhzpY333usr', 'wd': '1036x651'}
+
+#         cookies = cookies
+
+#         headers = {
+#             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+#             'Referer': 'https://www.instagram.com/',
+#             'X-Requested-With': 'XMLHttpRequest',
+#         }
+
+#         # Send a GET request to the Instagram API with cookies and headers
+#         response = requests.get(url, cookies=cookies, headers=headers)
+
+#         # Check if request was successful (status code 200)
+#         if response.status_code == 200:
+#         #     print(response.json())  # Print the JSON response
+#             json_response = response.json()
+#             pk_ids = [user['user']['pk_id'] for user in json_response['users']]
+#             print(pk_ids)
+#             return int(pk_ids[0])
+#             print(pk_ids[0])
+
+#         else:
+#             print(f"Request failed with status code {response.status_code}")
+#             print(response.text)  # Print the response content for further inspection
+#             return None
+
+#     def login(self):
+#         self.bot.get(self.base_url)
+#         try:
+#             enter_username = WebDriverWait(self.bot, 10).until(
+#                 EC.presence_of_element_located((By.NAME, 'username')))
+#             enter_username.send_keys(self.username)
+
+#             enter_password = WebDriverWait(self.bot, 10).until(
+#                 EC.presence_of_element_located((By.NAME, 'password')))
+#             enter_password.send_keys(self.password)
+#             enter_password.send_keys(Keys.RETURN)
+#             time.sleep(5)
+#         except Exception as e:
+#             print(f"The error2222222222222222 --->: {e}")
+#             self.logger.error(f"Error entering login credentials: {e}")
+
+#         time.sleep(3)
+
+#         recipient = self.recipients
+#         message = self.message
+
+
+#         try:
+#             # self.bot.find_element(By.XPATH,
+#             #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
+            
+#             cook = self.bot.get_cookies()
+#             # Convert to the desired format
+#             cookies_list=cook
+
+#             cookies = {}
+#             for cookie in cookies_list:
+#                 cookies[cookie['name']] = cookie['value']
+
+#             client_user_unique_code = self.get_all_user(recipient, cookies)
+
+
+
+#             # user_id = self.get_user_id(recipient)
+#             # user_unique_code = self.ad(user_id)
+#             print("user_unique_code:   ",client_user_unique_code)
+#             # user_unique_code = self.get_user_id(recipient)
+#             user_unique_code = self.ad(client_user_unique_code)
+#             time.sleep(2)
+#             self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
+
+
+
+#             time.sleep(2)
+            
+#         except Exception as e:
+#             self.logger.error(f"Error navigating to User Message section: {e}")
+#             return
+
+#         # for recipient, messages in zip(self.recipients, self.message):
+#         #     for message in messages:
+#         try:
+#             time.sleep(3)
+#             try:
+#             #     # new_message_button = WebDriverWait(self.bot, 5).until(
+#             #     #     # EC.visibility_of_element_located(
+#             #     #         EC.element_to_be_clickable(
+#             #     #         # (By.CLASS_NAME, 'x78zum5')
+#             #     #         (By.CSS_SELECTOR, 'div.x78zum5[role="button"]')
+#             #     #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
+#             #     # ))
+#             #     # new_message_button.click()
+#             #     try:
+#             #         # wait = WebDriverWait(self.bot, 5)
+#             #         # svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+
+#             #         # # Use JavaScript to click the SVG element
+#             #         # # self.bot.execute_script("arguments[0].click();", svg_element)
+
+#             #         # # Use JavaScript to create and dispatch a click event
+#             #         # self.bot.execute_script("""
+#             #         # var event = new MouseEvent('click', {
+#             #         #     bubbles: true,
+#             #         #     cancelable: true,
+#             #         #     view: window
+#             #         # });
+#             #         # arguments[0].dispatchEvent(event);
+#             #         # """, svg_element)
+
+#             #         # wait = WebDriverWait(self.bot, 5)
+#             #         # svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                    
+#             #         # # Click the SVG element directly
+#             #         # svg_element.click()
+#             #         try:
+#             #             wait = WebDriverWait(self.bot, 5)
+#             #             svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
+                        
+#             #             # Use ActionChains to click the SVG element
+#             #             action = ActionChains(self.bot)
+#             #             action.move_to_element(svg_element).click().perform()
+#             #         except:
+#             #             element = WebDriverWait(self.bot, 10).until( EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']")) ) 
+#             #             # element.click()
+
+#             #             self.bot.execute_script("arguments[0].click();", element)
+
+#             #     except Exception as e:
+#             #         self.logger.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
+
+#             #     time.sleep(2)
+#             #     try:
+#             #         # recipient_input = WebDriverWait(self.bot, 5).until(
+#             #         #     # EC.visibility_of_element_located(
+#             #         #     EC.element_to_be_clickable(
+                            
+#             #         #         # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
+#             #         #         # (By.CLASS_NAME, 'x5ur3kl')
+#             #         #         # (By.CSS_SELECTOR, 'input[name="queryBox"]')
+#             #         #         (By.NAME, "queryBox")
+#             #         #         ))
+#             #         # recipient_input.send_keys(recipient)
+
+#             #         # time.sleep(2)
+
+
+
+#             #         try:
+#             #             # Method 1: By name
+#             #             search_box = self.bot.find_element(By.NAME, "queryBox")
+#             #         except Exception as e:
+#             #             try:
+#             #                 # Method 4: By CSS selector with attribute placeholder
+#             #                 search_box = self.bot.find_element(By.CSS_SELECTOR, 'input[placeholder="Search..."]')
+#             #             except Exception as e:
+#             #                 try:
+#             #                     # Method 6: By XPATH with attribute placeholder
+#             #                     search_box = self.bot.find_element(By.XPATH, '//input[@placeholder="Search..."]')
+#             #                 except Exception as e:
+#             #                     try:
+#             #                         # Method 7: By XPATH with multiple class names
+#             #                         search_box = self.bot.find_element(By.XPATH, '//input[contains(@class, "x5ur3kl") and contains(@class, "xopu45v")]')
+#             #                     except Exception as e:
+#             #                         try:
+#             #                             # Method 8: By XPATH with type attribute
+#             #                             search_box = self.bot.find_element(By.XPATH, '//input[@type="text"]')
+#             #                         except Exception as e:
+#             #                             try:
+#             #                                 # Method 9: By XPATH with name attribute
+#             #                                 search_box = self.bot.find_element(By.XPATH, '//input[@name="queryBox"]')
+#             #                             except Exception as e:
+#             #                                 try:
+#             #                                     # Method 10: By partial link text (not recommended for input but shown as an example)
+#             #                                     search_box = self.bot.find_element(By.PARTIAL_LINK_TEXT, "Search")
+#             #                                 except Exception as e:
+#             #                                     print("Element not found with any method")
+#             #         search_box.send_keys(recipient)
+
+#             #         time.sleep(2)
+
+
+
+
+
+#             #     except Exception as e:
+#             #         self.logger.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
+#             #         self.close_browser()
+
+#             #     # Recipient Suggestion
+
+#             #     # recipient_suggestion = WebDriverWait(self.bot, 5).until(
+#             #     #     EC.visibility_of_element_located(
+#             #     #         (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]')
+#             #     #     ))
+#             #     # recipient_suggestion.click()
+                
+#             #     try:
+#             #         # Ensure the element is visible and clickable
+#             #         suggestion_element = WebDriverWait(self.bot, 10).until(
+#             #             EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and @tabindex="0"]'))
+#             #             # EC.element_to_be_clickable((By.CSS_SELECTOR, '.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.x1q0g3np.xqjyukv.x6s0dn4.x1oa3qoh.x1nhvcw1'))
+#             #         )
+
+
+#             #         suggestion_element.click()
+
+#             #         # Scroll to the element
+#             #         # self.bot.execute_script("arguments[0].scrollIntoView(true);", suggestion_element)
+
+#             #         # # Pause to allow any potential overlays to load
+#             #         # time.sleep(2)
+
+#             #         # # Remove any potentially overlapping elements
+#             #         # self.bot.execute_script("""
+#             #         #     var elements = document.getElementsByClassName('x1qjc9v5 x9f619 x78zum5 xdt5ytf x1iyjqo2 xl56j7k');
+#             #         #     for(var i = 0; i < elements.length; i++) {
+#             #         #         elements[i].style.display = 'none';
+#             #         #     }
+#             #         # """)
+
+#             #         # Pause to ensure the DOM is updated
+#             #         time.sleep(2)
+
+#             #         # # Use Action Chains to move to the element before clicking
+#             #         # actions = ActionChains(self.bot)
+#             #         # actions.move_to_element(suggestion_element).click().perform()
+
+                    
+#             #         time.sleep(2)
+#             #         print("SUGGESTION CODE PASSED")
+
+#             #     except Exception as e:
+#             #         self.logger.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
+#             #         self.close_browser()
+                
+                
+                
+                
+#             #     # chat Button
+
+
+#             #     # next_button = WebDriverWait(self.bot, 5).until(
+#             #     #     # EC.visibility_of_element_located(
+#             #     #         EC.element_to_be_clickable(
+#             #     #         # (By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]')
+#             #     #         # (By.CLASS_NAME, 'x1i10hfl')
+#             #     #         (By.CSS_SELECTOR, 'div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1cy8zhl.x1oa3qoh.x1nhvcw1')
+#             #     #         ))
+#             #     # next_button.click()
+
+
+#             #     try:
+#             #         # Wait until the Chat Button is present in the DOM
+#             #         Chat_button = WebDriverWait(self.bot, 5)
+#             #         # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
+#             #         # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
+#             #         chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
+#             #         # Use JavaScript to create and dispatch a click event
+#             #         self.bot.execute_script("""
+#             #         var event = new MouseEvent('click', {
+#             #             bubbles: true,
+#             #             cancelable: true,
+#             #             view: window
+#             #         });
+#             #         arguments[0].dispatchEvent(event);
+#             #         """, chat_element)
+
+#             #     except Exception as e:
+#             #         self.logger.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
+#             #         self.close_browser()
+
+
+#             #     time.sleep(2)
+#             # except Exception as e:
+#             #     Message.objects.create(
+#             #         instagram_account =self.instagram_account,
+#             #         recipient=recipient, 
+#             #         content = message,
+#             #         scheduled_time = timezone.now(),
+#             #         sent = False,
+#             #         sent_time = timezone.now(),
+#             #         error = f"Error adding recipient {recipient}: {e}"
+#             #         )
+#             #     self.logger.error(f"Error adding recipient {recipient}: {e}")
+                
+
+#             # try:
+#             #     # message_area = WebDriverWait(self.bot, 5).until(
+#             #     #     EC.visibility_of_element_located((By.XPATH,
+#             #     #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
+#             #     #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
+#             #     # )
+
+#             #     # message_area = WebDriverWait(self.bot, 5).until(
+#             #     #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
+#             #     # )
+#             #     time.sleep(2)
+#             #     # message_area = WebDriverWait(self.bot, 10).until(
+#             #     #     EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
+#             #     # )
+
+                
+#             #     # message_area.click()
+
+
+
+
+
+# #================================================WE WANT FROM HERE++++=========================+++++++++++++++++++++++++++++++                    
+
+#                 message_area = WebDriverWait(self.bot, 5)
+#                 # message_area_element = message_area.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-describedby="Message"][role="textbox"][contenteditable="true"]')))
+#                 message_area_element = message_area.until(EC.presence_of_element_located((By.XPATH, '//div[@aria-describedby="Message" and @role="textbox" and @contenteditable="true"]')))
+#                 # Use JavaScript to focus and interact with the contenteditable div
+#                 self.bot.execute_script("""
+#                 arguments[0].focus();
+#                 arguments[0].innerHTML = '<p class="xat24cr xdj266r">Your message here</p>';
+#                 var event = new Event('input', {
+#                     bubbles: true,
+#                     cancelable: true,
+#                 });
+#                 arguments[0].dispatchEvent(event);
+#                 """, message_area_element)
+
+#                 # message_area.send_keys(f"{message}")
+
+
+
+#                 time.sleep(1)
+#                 # message_area.send_keys(Keys.ENTER)
+#                 # time.sleep(2)
+
+
+#                 print("The message is prior send message: ",message)
+
+
+#                 message_area_element.send_keys(message)
+#                 print("The message is AFTER send message: ",message)
+#                 time.sleep(1)
+#                 message_area_element.send_keys(Keys.RETURN)
+#                 print("The message is AFTER ENTER: ",message)
+#                 time.sleep(2)
+#                 mess=Message.objects.create(
+#                     instagram_account =self.instagram_account, 
+#                     recipient=recipient,
+#                     content = message,
+#                     scheduled_time = timezone.now(),
+#                     sent = True,
+#                     sent_time = timezone.now()
+#                     )
+                
+#                 mess.sent =True
+#                 mess.save()
+#                 time.sleep(1)
+#             except Exception as e:
+#                 self.logger.error(f"Error sending message to {recipient}: {e}")
+#                 Message.objects.create(
+#                     instagram_account =self.instagram_account, 
+#                     recipient=recipient,
+#                     content = message,
+#                     scheduled_time = timezone.now(),
+#                     sent = False,
+#                     sent_time = timezone.now(),
+#                     error = f"Error sending message to {recipient}: {e}"
+#                     )
+                
+#             finally:
+#                 self.close_browser()
+#                 time.sleep(2)
+
+#         except Exception as e:
+#             Message.objects.create(
+#                     instagram_account =self.instagram_account, 
+#                     recipient=recipient,
+#                     content = message,
+#                     scheduled_time = timezone.now(),
+#                     sent = False,
+#                     sent_time = timezone.now(),
+#                     error = f"Error handling message for {recipient}: {e}")
+#             self.logger.error(f"Error handling message for {recipient}: {e}")
+
+#     def logout(self):
+#         try:
+#             # profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
+#             # self.bot.find_element(By.XPATH, profile_xpath).click()
+            
+#             profile_ = WebDriverWait(self.bot, 3).until(
+#             EC.element_to_be_clickable((By.CSS_SELECTOR, "span[role='link'][tabindex='-1']"))
+#             # EC.element_to_be_clickable((By.XPATH, '//svg[@aria-label="Settings"]'))
+#             )
+#             print("first DONE nfjksdjf")
+#             profile_.click()
+
+#             time.sleep(1)
+#             print("inside Logout 11111111111111111111111")
+#             # setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
+#             # self.bot.find_element(By.XPATH, setting_icon_xpath).click()
+
+#             try:
+#                 setting_ = WebDriverWait(self.bot, 3).until(
+#                     EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']"))
+#                 )
+#                 setting_.click()
+#                 print("Second DONE nfjksdjf")
+
+#             except Exception as e:
+#                 print(f"An error occurred 11111111111111111: {e}")
+
+#             time.sleep(1)
+#             print("inside Logout 22222222222222222222222")
+#             # logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
+#             # self.bot.find_element(By.XPATH, logout_xpath).click()
+
+#             try:
+#                 # logout_ = WebDriverWait(self.bot, 10).until(
+#                 #     # EC.element_to_be_clickable((By.CSS_SELECTOR, "button[tabindex='0']"))
+#                 #     EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]')),
+#                 # )
+#                 # logout_.click()
+
+
+#                 try:
+#                     # Try to click the button using CSS Selector
+#                     log_out_button = WebDriverWait(self.bot, 10).until(
+#                         EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.xjbqb8w.x1qhh985.xcfux6l.xm0m39n.x1yvgwvq.x13fuv20.x178xt8z.x1ypdohk.xvs91rp.x1evy7pa.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x1wxaq2x.x1iorvi4.x1sxyh0.xjkvuk6.xurb0ha.x2b8uid.x87ps6o.xxymvpz.xh8yej3.x52vrxo.x4gyw5p.x5n08af'))
+#                     )
+#                     log_out_button.click()
+#                     print("Clicked on the element using CSS Selector")
+#                 except Exception as e_css:
+#                     print(f"CSS Selector failed: {e_css}")
+                    
+#                     try:
+#                         # Try to click the button using XPath
+#                         log_out_button = WebDriverWait(self.bot, 10).until(
+#                             EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]'))
+#                         )
+#                         log_out_button.click()
+#                         print("Clicked on the element using XPath")
+#                     except Exception as e_xpath:
+#                         print(f"XPath failed: {e_xpath}")
+                        
+#                         try:
+#                             # Try to click the button using Class Name
+#                             log_out_button = WebDriverWait(self.bot, 10).until(
+#                                 EC.element_to_be_clickable((By.CLASS_NAME, 'xjbqb8w'))
+#                             )
+#                             log_out_button.click()
+#                             print("Clicked on the element using Class Name")
+#                         except Exception as e_class:
+#                             print(f"Class Name failed: {e_class}")
+                            
+#                             try:
+#                                 # Try to click the button using Partial Link Text
+#                                 log_out_button = WebDriverWait(self.bot, 10).until(
+#                                     EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, 'Log Out'))
+#                                 )
+#                                 log_out_button.click()
+#                                 print("Clicked on the element using Partial Link Text")
+#                             except Exception as e_partial_link:
+#                                 print(f"Partial Link Text failed: {e_partial_link}")
+#                                 print("All methods failed to click the element")
+#                 print("Third DONE nfjksdjf")
+#             except Exception as e:
+#                 print(f"An error occurred 22222222222222222: {e}")
+
+
+#             print("inside Logout 33333333333333333333333")
+#             time.sleep(2)
+#         except Exception as e:
+#             self.logger.error(f"An error occurred during logout: {e}")
+
+#     def close_browser(self):
+#         self.logout()
+#         print("Logout DONE")
+#         time.sleep(3)
+#         print("Closing Browser")
+#         self.bot.quit()
+
+# def single_send_messages(account):
+#     username = account['username']
+#     password = account['password']
+#     recipients = account['recipients']
+#     message = account['message']
+#     instagram_account = account['instagram_account']
+#     try:
+#         # instagram_bot = InstagramBot(username, password, recipients, message)
+
+#         instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
+
+#         # instagram_bot.close_browser()
+#         return f"Messages sent from {username} to {recipients}"
+#     except Exception as e:
+#         # self.logger.error(f"An error occurred with account {username}: {e}")
+#         return f"Failed to send messages from {username}: {str(e)}"
+   
+
+
+from instagrapi import Client
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils import timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
+
 class SingleInstaMessageView(APIView):
 
     @csrf_exempt
@@ -1974,810 +3030,124 @@ class SingleInstaMessageView(APIView):
         return super().dispatch(*args, **kwargs)
 
     def post(self, request):
-        # self.logger.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-        instagram_account_id=request.data.get('instagram_account_id')
+        instagram_account_id = request.data.get('instagram_account_id')
 
         if not instagram_account_id:
-            return Response({"Message":"Please Provide instagram_account_id"})
+            return Response({"Message": "Please Provide instagram_account_id"})
         
-        recipient_list=request.data.get('recipient_list')
-
-        # if not isinstance(recipient_list, list):
-        #     return Response({"Message": "Recipient must be a list. ex- ['recipient1', 'recipient2', 'recipient3']"})
+        recipient_list = request.data.get('recipient_list')
 
         if not recipient_list:
-            return Response({"Message":"Recipient not found!!!!"})
+            return Response({"Message": "Recipient not found!!!!"})
         
-
-        message_list=request.data.get('message_list')
-
-        custom_message=request.data.get('custom_message')
-
-        # if not isinstance(message_list, list):
-        #     return Response({"Message": "message_list must be a list. ex- if you have 3 recipient then [[Template_id1, Template_id2],[Template_id3, Template_id1], [Template_id4]]"})
+        message_list = request.data.get('message_list')
+        custom_message = request.data.get('custom_message')
 
         if not message_list and not custom_message:
-            return Response({"Message":"message not found!!!!"})
+            return Response({"Message": "message not found!!!!"})
         
         if not custom_message:
-            # template_id for templates:
             try:
-                # Fetch message_template object from the database
                 message_template = MessageTemplate.objects.get(id=message_list)
-                print("The message template is as fllows: ",message_template)
+                date = request.data.get('date', 'Date')
+                name = request.data.get('name', 'Instagram User')
+                username = request.data.get('username', 'username_not_provided')
 
-                # Retrieve dynamic data from request or provide defaults
-                date = request.data.get('date', 'Date')  # Default date if not provided
-                name = request.data.get('name', 'Instagram User')  # Default name if not provided
-                # company_service = request.data.get('company_service', 'Services')  # Default service if not provided
-                username = request.data.get('username', 'username_not_provided')  # Default company name if not provided
-                # address = request.data.get('address', '')  # Default address if not provided
-
-                # Replace placeholders in message template with dynamic data
                 message_content = message_template.template_content.format(
                     name=name[0],
                     username=username[0],
                     date=date,
                 )
 
-                print("The message content :",message_content)
-
-
-                # Add formatted message content to the template_messages list
-                # message_content
-
             except MessageTemplate.DoesNotExist:
                 return Response({"Message": f"Message template with ID {message_list} does not exist"}, status=404)
         else:
-
             try:
-                date = request.data.get('date', 'Date')  # Default date if not provided
-                name = request.data.get('name', 'Instagram User')  # Default name if not provided
+                date = request.data.get('date', 'Date')
+                name = request.data.get('name', 'Instagram User')
                 username = request.data.get('username', 'username_not_provided')
-                message_contents = custom_message.format(
-                        name=name[0],
-                        username=username[0],
-                        date=date
-                    )
-                message_content = message_contents
-            except:    
 
+                message_content = custom_message.format(
+                    name=name[0],
+                    username=username[0],
+                    date=date
+                )
+            except:    
                 message_content = custom_message
 
-            # message_content = custom_message
-
-        ins=instagram_accounts.objects.filter(id=instagram_account_id).first()
+        ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
         if not ins:
             return Response({"Message": "Instagram account not found"}, status=404)
 
-        username=ins.username
-        password=ins.password
+        username = ins.username
+        password = ins.password
 
-      
         accounts = [
             {'username': username, 'password': password, 'recipients': recipient_list[0], 'message': message_content, 'instagram_account': ins}
         ]
 
-
-        # print("The account detail is: ",accounts)
-
-        max_simultaneous_logins = 10  # Set this to the number of simultaneous logins you want
+        max_simultaneous_logins = 10
 
         results = []
         with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
             futures = [executor.submit(single_send_messages, account) for account in accounts]
-            # print("The futures are as follows :",futures)
             for future in as_completed(futures):
                 results.append(future.result())
         return JsonResponse({'results': results})
 
-from selenium.webdriver.common.action_chains import ActionChains
-import undetected_chromedriver as uc  # Import undetected_chromedriver
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-import requests
-
 class SingleInstagramBot:
-    # def __init__(self, username, password, recipients, message):
     def __init__(self, username, password, recipients, message, instagram_account):
         self.username = username
         self.password = password
         self.recipients = recipients
         self.message = message
         self.instagram_account = instagram_account
-        self.base_url = 'https://www.instagram.com/'
 
-        # options = uc.ChromeOptions()
-        # options = webdriver.ChromeOptions()
-        options = uc.ChromeOptions()
-        # options.headless = True
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-extensions')
-        # options.add_argument('--window-size=1366×768')
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument('--disable-client-side-phishing-detection')
-
-        # options.binary_location = '/usr/bin/chromedriver' 
-        # self.bot = uc.Chrome(options=options)
-        # self.bot = webdriver.Chrome(options=options)
-
-
-        options.add_argument('--headless')
-        options.add_argument('--disable-setuid-sandbox')
-        # options.add_argument('--user-data-dir=/tmp/chromium')
-        options.add_argument('--remote-debugging-port=9222')
-        # logging.basicConfig(level=logging.DEBUG)
-
-         # Initialize custom logger
+        self.client = Client()
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
-
-        class FilterOutSpecificWarnings(logging.Filter):
-            def filter(self, record):
-                # Filter out the warnings you want to suppress
-                message = record.getMessage()
-                if "Permissions-Policy header: Unrecognized feature: 'battery'" in message \
-                   or "Permissions-Policy header: Unrecognized feature: 'usb-unrestricted'" in message:
-                    return False  # Return False to suppress these log records
-                return True
-
-        stream_handler.addFilter(FilterOutSpecificWarnings())
         self.logger.addHandler(stream_handler)
-        print("Options set SUCCESSFULLY")
-
-
-        CHROMEDRIVER_PATH = '/usr/bin/chromedriver'
-        # Check if ChromeDriver exists at the specified path
-        if not os.path.exists(CHROMEDRIVER_PATH):
-            from webdriver_manager.chrome import ChromeDriverManager
-            CHROMEDRIVER_PATH = ChromeDriverManager().install()
-
-        
-
-        # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-        # Ensure that the ChromeDriver path is correct
-        # try: self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) 
-
-        #     print("BOT CREATED SUCCESSFULLY") 
-        # except Exception as e: 
-        #     print(f"The Error in bot creation is: {str(e)}")
-
 
         try:
-
-            chromedriver_path = '/usr/bin/chromedriver'
-            service = Service(CHROMEDRIVER_PATH)
-            # self.bot = webdriver.Chrome(service=service, options=options)
-            self.bot = uc.Chrome(options=options)
-
-            # self.bot = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            # self.bot = webdriver.Chrome(options=options)
-            # self.bot = webdriver.Chrome(chromedriver_path, options=options)
-
-            print("BOT CREATED SUCCESSFULLY")
-
+            self.client.login(username, password)
+            self.logger.info(f"Logged in successfully as {username}")
         except Exception as e:
-            print(f"The Error in bot is: {str(e)}")
-
-
-        # self.bot = uc.Chrome()
-        self.popup_thread = threading.Thread(target=self.handle_popup, daemon=True)
-        self.popup_thread.start()
-
-        print("Thread started SUCCESSFULLY")
-        try:
-            self.login()
-            print("Login SUCCESSFULLY")
-        except Exception as e:
-            print(f"The error is is --->: {e}")
             self.logger.error(f"Error during login for {self.username}: {e}")
-            self.bot.quit()
+            raise e
 
-    def handle_popup(self):
-        while True:
-            try:
-                not_now_button = WebDriverWait(self.bot, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Not Now')]"))
-                )
-                not_now_button.click()
-                self.logger.info(f"Popup closed for {self.username}")
-            except Exception as e:
-                time.sleep(1)
-
-    # def get_user_id(self,username):
-    #     url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-
-    #     headers = {
-    #         "accept": "*/*",
-    #         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    #         "x-ig-app-id": "936619743392459",
-    #         "x-requested-with": "XMLHttpRequest"
-    #     }
-
-    #     response = requests.get(url, headers=headers)
-    #     time.sleep(2)
-    #     # print("respnse text :",response.text)
-
-    #     if response.status_code == 200:
-    # #         print(response.json())  # or response.text if the content is not JSON
-    #         return response.json()['data']['user']['eimu_id']
-    #     else:
-    #         return None
-    #         print(f"Failed to retrieve data: {response.status_code}")
-
-    def get_user_id(self,username):
+    def send_message(self):
         try:
-            # Navigate to the search API endpoint
-            self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
-
-            # Wait for the page to load
-            time.sleep(5)
-
-            # Extract JSON response from the page source
-            json_response = self.bot.page_source
-
-            # Find the JSON data within the page source
-            start_index = json_response.find('{"users":')
-            end_index = json_response.find('</pre>')
-            json_data = json_response[start_index:end_index]
-
-            # Parse the JSON data
-            data = json.loads(json_data)
-
-            # Extract pk_id values
-            pk_ids = [user['user']['pk_id'] for user in data['users']]
-            print("The pk ids are as :",pk_ids)
-            print(int(pk_ids[0]))
-            return int(pk_ids[0])
-
-
-        # import json
-        # self.bot.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
-        # json_response = self.bot.page_source
-
-
-        # json_response = requests.get(f'https://www.instagram.com/web/search/topsearch/?query={username}')
-
-        # try:
-
-        #     data = json.loads(str(json_response))
-
-        #     # Extract the pk_id values
-        #     pk_ids = [user['user']['pk_id'] for user in data['users']]
-        #     print(pk_ids)
-        #     return pk_ids
-        except:
-            print("Error Occured during the fetching of user id")
-            return "Error Occured"
-
-
-
-    def ad(self,user_id):
-        import requests
-
-        url = 'https://www.instagram.com/api/graphql'
-
-        headers = {
-            'accept': '*/*',
-            'accept-language': 'en-US,en;q=0.9',
-            'content-type': 'application/x-www-form-urlencoded',
-            'origin': 'https://www.instagram.com',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-            'x-fb-friendly-name': 'PolarisProfilePageContentQuery',
-            'x-fb-lsd': 'AVr41ZWd_UE',
-        }
-        data = {
-                'lsd': 'AVr41ZWd_UE',
-                'variables': f'{{"id":"{user_id}","render_surface":"PROFILE"}}',
-                'server_timestamps': 'true',
-                'doc_id': '25618261841150840',
-            }
-        
-        try:
-
-            
-            response = requests.post(url, headers=headers, data=data)
-            print(response.status_code)
-        #     print(response.text)
-            print(response.json()['data']['user']['interop_messaging_user_fbid'])
-
-            return response.json()['data']['user']['interop_messaging_user_fbid']
-        except:
-            print("Error Occured During Process")
-            return None
-        
-    def get_all_user(self,username, cookies):
-        # Define the URL and updated cookies
-        url = f'https://www.instagram.com/web/search/topsearch/?query={username}'
-
-        # cookies = {'rur': '"CCO\\05464736011245\\0541751121068:01f7fc95e3ff14d77771115195eb34e8741fe6ee5e852032dad50bef6b4e299fd42ce06f"', 'ds_user_id': '64736011245', 'csrftoken': 'Me5udPTxg64s9YLHImsFZy6L18NbwlY3', 'datr': 'JMl-Zjbdap2Ifo2R5pc_PPnn', 'ig_did': '6A6C31B1-DF71-4DCD-A428-00B9D24C4BB4', 'sessionid': '64736011245%3ArtfRByw809pNAl%3A10%3AAYdRcUIh5PGuz67IgY3669NMIFQzw_hfKvQ3zuucXQ', 'ps_n': '1', 'dpr': '1.25', 'ps_l': '1', 'mid': 'Zn7JJAALAAEOLRonIIhzpY333usr', 'wd': '1036x651'}
-
-        cookies = cookies
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-            'Referer': 'https://www.instagram.com/',
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-
-        # Send a GET request to the Instagram API with cookies and headers
-        response = requests.get(url, cookies=cookies, headers=headers)
-
-        # Check if request was successful (status code 200)
-        if response.status_code == 200:
-        #     print(response.json())  # Print the JSON response
-            json_response = response.json()
-            pk_ids = [user['user']['pk_id'] for user in json_response['users']]
-            print(pk_ids)
-            return int(pk_ids[0])
-            print(pk_ids[0])
-
-        else:
-            print(f"Request failed with status code {response.status_code}")
-            print(response.text)  # Print the response content for further inspection
-            return None
-
-    def login(self):
-        self.bot.get(self.base_url)
-        try:
-            enter_username = WebDriverWait(self.bot, 10).until(
-                EC.presence_of_element_located((By.NAME, 'username')))
-            enter_username.send_keys(self.username)
-
-            enter_password = WebDriverWait(self.bot, 10).until(
-                EC.presence_of_element_located((By.NAME, 'password')))
-            enter_password.send_keys(self.password)
-            enter_password.send_keys(Keys.RETURN)
-            time.sleep(5)
-        except Exception as e:
-            print(f"The error2222222222222222 --->: {e}")
-            self.logger.error(f"Error entering login credentials: {e}")
-
-        time.sleep(3)
-
-        recipient = self.recipients
-        message = self.message
-
-
-        try:
-            # self.bot.find_element(By.XPATH,
-            #                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[5]/div/div/span/div/a/div/div[1]/div/div[1]').click()
-            
-            cook = self.bot.get_cookies()
-            # Convert to the desired format
-            cookies_list=cook
-
-            cookies = {}
-            for cookie in cookies_list:
-                cookies[cookie['name']] = cookie['value']
-
-            client_user_unique_code = self.get_all_user(recipient, cookies)
-
-
-
-            # user_id = self.get_user_id(recipient)
-            # user_unique_code = self.ad(user_id)
-            print("user_unique_code:   ",client_user_unique_code)
-            # user_unique_code = self.get_user_id(recipient)
-            user_unique_code = self.ad(client_user_unique_code)
-            time.sleep(2)
-            self.bot.get(f"https://www.instagram.com/direct/t/{user_unique_code}/")
-
-
-
-            time.sleep(2)
-            
-        except Exception as e:
-            self.logger.error(f"Error navigating to User Message section: {e}")
-            return
-
-        # for recipient, messages in zip(self.recipients, self.message):
-        #     for message in messages:
-        try:
-            time.sleep(3)
-            try:
-            #     # new_message_button = WebDriverWait(self.bot, 5).until(
-            #     #     # EC.visibility_of_element_located(
-            #     #         EC.element_to_be_clickable(
-            #     #         # (By.CLASS_NAME, 'x78zum5')
-            #     #         (By.CSS_SELECTOR, 'div.x78zum5[role="button"]')
-            #     #         # (By.XPATH,'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[1]/div/div[1]/div[2]/div/div/div')
-            #     # ))
-            #     # new_message_button.click()
-            #     try:
-            #         # wait = WebDriverWait(self.bot, 5)
-            #         # svg_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
-
-            #         # # Use JavaScript to click the SVG element
-            #         # # self.bot.execute_script("arguments[0].click();", svg_element)
-
-            #         # # Use JavaScript to create and dispatch a click event
-            #         # self.bot.execute_script("""
-            #         # var event = new MouseEvent('click', {
-            #         #     bubbles: true,
-            #         #     cancelable: true,
-            #         #     view: window
-            #         # });
-            #         # arguments[0].dispatchEvent(event);
-            #         # """, svg_element)
-
-            #         # wait = WebDriverWait(self.bot, 5)
-            #         # svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
-                    
-            #         # # Click the SVG element directly
-            #         # svg_element.click()
-            #         try:
-            #             wait = WebDriverWait(self.bot, 5)
-            #             svg_element = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="New message"]')))
-                        
-            #             # Use ActionChains to click the SVG element
-            #             action = ActionChains(self.bot)
-            #             action.move_to_element(svg_element).click().perform()
-            #         except:
-            #             element = WebDriverWait(self.bot, 10).until( EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']")) ) 
-            #             # element.click()
-
-            #             self.bot.execute_script("arguments[0].click();", element)
-
-            #     except Exception as e:
-            #         self.logger.error(f"Error recipient 111111111111111111111111 {recipient}: {e}")
-
-            #     time.sleep(2)
-            #     try:
-            #         # recipient_input = WebDriverWait(self.bot, 5).until(
-            #         #     # EC.visibility_of_element_located(
-            #         #     EC.element_to_be_clickable(
-                            
-            #         #         # (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[2]/div/div[2]/input')
-            #         #         # (By.CLASS_NAME, 'x5ur3kl')
-            #         #         # (By.CSS_SELECTOR, 'input[name="queryBox"]')
-            #         #         (By.NAME, "queryBox")
-            #         #         ))
-            #         # recipient_input.send_keys(recipient)
-
-            #         # time.sleep(2)
-
-
-
-            #         try:
-            #             # Method 1: By name
-            #             search_box = self.bot.find_element(By.NAME, "queryBox")
-            #         except Exception as e:
-            #             try:
-            #                 # Method 4: By CSS selector with attribute placeholder
-            #                 search_box = self.bot.find_element(By.CSS_SELECTOR, 'input[placeholder="Search..."]')
-            #             except Exception as e:
-            #                 try:
-            #                     # Method 6: By XPATH with attribute placeholder
-            #                     search_box = self.bot.find_element(By.XPATH, '//input[@placeholder="Search..."]')
-            #                 except Exception as e:
-            #                     try:
-            #                         # Method 7: By XPATH with multiple class names
-            #                         search_box = self.bot.find_element(By.XPATH, '//input[contains(@class, "x5ur3kl") and contains(@class, "xopu45v")]')
-            #                     except Exception as e:
-            #                         try:
-            #                             # Method 8: By XPATH with type attribute
-            #                             search_box = self.bot.find_element(By.XPATH, '//input[@type="text"]')
-            #                         except Exception as e:
-            #                             try:
-            #                                 # Method 9: By XPATH with name attribute
-            #                                 search_box = self.bot.find_element(By.XPATH, '//input[@name="queryBox"]')
-            #                             except Exception as e:
-            #                                 try:
-            #                                     # Method 10: By partial link text (not recommended for input but shown as an example)
-            #                                     search_box = self.bot.find_element(By.PARTIAL_LINK_TEXT, "Search")
-            #                                 except Exception as e:
-            #                                     print("Element not found with any method")
-            #         search_box.send_keys(recipient)
-
-            #         time.sleep(2)
-
-
-
-
-
-            #     except Exception as e:
-            #         self.logger.error(f"Error recipient 222222222222222222222222222 {recipient}: {e}")
-            #         self.close_browser()
-
-            #     # Recipient Suggestion
-
-            #     # recipient_suggestion = WebDriverWait(self.bot, 5).until(
-            #     #     EC.visibility_of_element_located(
-            #     #         (By.XPATH,'/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[3]/div/div/div[1]/div[1]')
-            #     #     ))
-            #     # recipient_suggestion.click()
-                
-            #     try:
-            #         # Ensure the element is visible and clickable
-            #         suggestion_element = WebDriverWait(self.bot, 10).until(
-            #             EC.element_to_be_clickable((By.XPATH, '//div[@role="button" and @tabindex="0"]'))
-            #             # EC.element_to_be_clickable((By.CSS_SELECTOR, '.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.x1q0g3np.xqjyukv.x6s0dn4.x1oa3qoh.x1nhvcw1'))
-            #         )
-
-
-            #         suggestion_element.click()
-
-            #         # Scroll to the element
-            #         # self.bot.execute_script("arguments[0].scrollIntoView(true);", suggestion_element)
-
-            #         # # Pause to allow any potential overlays to load
-            #         # time.sleep(2)
-
-            #         # # Remove any potentially overlapping elements
-            #         # self.bot.execute_script("""
-            #         #     var elements = document.getElementsByClassName('x1qjc9v5 x9f619 x78zum5 xdt5ytf x1iyjqo2 xl56j7k');
-            #         #     for(var i = 0; i < elements.length; i++) {
-            #         #         elements[i].style.display = 'none';
-            #         #     }
-            #         # """)
-
-            #         # Pause to ensure the DOM is updated
-            #         time.sleep(2)
-
-            #         # # Use Action Chains to move to the element before clicking
-            #         # actions = ActionChains(self.bot)
-            #         # actions.move_to_element(suggestion_element).click().perform()
-
-                    
-            #         time.sleep(2)
-            #         print("SUGGESTION CODE PASSED")
-
-            #     except Exception as e:
-            #         self.logger.error(f"Error recipient 33333333333333333333333333333 {recipient}: {e}")
-            #         self.close_browser()
-                
-                
-                
-                
-            #     # chat Button
-
-
-            #     # next_button = WebDriverWait(self.bot, 5).until(
-            #     #     # EC.visibility_of_element_located(
-            #     #         EC.element_to_be_clickable(
-            #     #         # (By.XPATH, '/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/div/div[1]/div/div[4]')
-            #     #         # (By.CLASS_NAME, 'x1i10hfl')
-            #     #         (By.CSS_SELECTOR, 'div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1cy8zhl.x1oa3qoh.x1nhvcw1')
-            #     #         ))
-            #     # next_button.click()
-
-
-            #     try:
-            #         # Wait until the Chat Button is present in the DOM
-            #         Chat_button = WebDriverWait(self.bot, 5)
-            #         # element = Chat_button.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="button"][tabindex="0"]')))
-            #         # chat_element = Chat_button.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div[role="button"]:contains("Chat")')))
-            #         chat_element = Chat_button.until(EC.element_to_be_clickable((By.XPATH, '//div[text()="Chat" and @role="button"]')))
-            #         # Use JavaScript to create and dispatch a click event
-            #         self.bot.execute_script("""
-            #         var event = new MouseEvent('click', {
-            #             bubbles: true,
-            #             cancelable: true,
-            #             view: window
-            #         });
-            #         arguments[0].dispatchEvent(event);
-            #         """, chat_element)
-
-            #     except Exception as e:
-            #         self.logger.error(f"Error recipient 44444444444444444444444444444444 {recipient}: {e}")
-            #         self.close_browser()
-
-
-            #     time.sleep(2)
-            # except Exception as e:
-            #     Message.objects.create(
-            #         instagram_account =self.instagram_account,
-            #         recipient=recipient, 
-            #         content = message,
-            #         scheduled_time = timezone.now(),
-            #         sent = False,
-            #         sent_time = timezone.now(),
-            #         error = f"Error adding recipient {recipient}: {e}"
-            #         )
-            #     self.logger.error(f"Error adding recipient {recipient}: {e}")
-                
-
-            # try:
-            #     # message_area = WebDriverWait(self.bot, 5).until(
-            #     #     EC.visibility_of_element_located((By.XPATH,
-            #     #                                       #'/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[2]/div/div/div[2]/div/div[1]/p'))
-            #     #                                       '/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[2]/section/div/div/div/div[1]/div/div[2]/div/div/div/div/div/div/div[2]/div/div/div[3]/div/div/div[2]/div/div'))
-            #     # )
-
-            #     # message_area = WebDriverWait(self.bot, 5).until(
-            #     #     EC.visibility_of_element_located((By.CSS_SELECTOR, 'x1n2onr6'))
-            #     # )
-            #     time.sleep(2)
-            #     # message_area = WebDriverWait(self.bot, 10).until(
-            #     #     EC.visibility_of_element_located((By.XPATH, '//div[@contenteditable="true" and @aria-label="Message"]'))
-            #     # )
-
-                
-            #     # message_area.click()
-
-
-
-
-
-#================================================WE WANT FROM HERE++++=========================+++++++++++++++++++++++++++++++                    
-
-                message_area = WebDriverWait(self.bot, 5)
-                # message_area_element = message_area.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-describedby="Message"][role="textbox"][contenteditable="true"]')))
-                message_area_element = message_area.until(EC.presence_of_element_located((By.XPATH, '//div[@aria-describedby="Message" and @role="textbox" and @contenteditable="true"]')))
-                # Use JavaScript to focus and interact with the contenteditable div
-                self.bot.execute_script("""
-                arguments[0].focus();
-                arguments[0].innerHTML = '<p class="xat24cr xdj266r">Your message here</p>';
-                var event = new Event('input', {
-                    bubbles: true,
-                    cancelable: true,
-                });
-                arguments[0].dispatchEvent(event);
-                """, message_area_element)
-
-                # message_area.send_keys(f"{message}")
-
-
-
-                time.sleep(1)
-                # message_area.send_keys(Keys.ENTER)
-                # time.sleep(2)
-
-
-                print("The message is prior send message: ",message)
-
-
-                message_area_element.send_keys(message)
-                print("The message is AFTER send message: ",message)
-                time.sleep(1)
-                message_area_element.send_keys(Keys.RETURN)
-                print("The message is AFTER ENTER: ",message)
-                time.sleep(2)
-                mess=Message.objects.create(
-                    instagram_account =self.instagram_account, 
-                    recipient=recipient,
-                    content = message,
-                    scheduled_time = timezone.now(),
-                    sent = True,
-                    sent_time = timezone.now()
-                    )
-                
-                mess.sent =True
-                mess.save()
-                time.sleep(1)
-            except Exception as e:
-                self.logger.error(f"Error sending message to {recipient}: {e}")
-                Message.objects.create(
-                    instagram_account =self.instagram_account, 
-                    recipient=recipient,
-                    content = message,
-                    scheduled_time = timezone.now(),
-                    sent = False,
-                    sent_time = timezone.now(),
-                    error = f"Error sending message to {recipient}: {e}"
-                    )
-                
-            finally:
-                self.close_browser()
-                time.sleep(2)
-
-        except Exception as e:
+            user_id = self.client.user_id_from_username(self.recipients)
+            self.client.direct_send(self.message, [user_id])
+            self.logger.info(f"Message sent to {self.recipients}")
             Message.objects.create(
-                    instagram_account =self.instagram_account, 
-                    recipient=recipient,
-                    content = message,
-                    scheduled_time = timezone.now(),
-                    sent = False,
-                    sent_time = timezone.now(),
-                    error = f"Error handling message for {recipient}: {e}")
-            self.logger.error(f"Error handling message for {recipient}: {e}")
+                instagram_account=self.instagram_account,
+                recipient=self.recipients,
+                content=self.message,
+                scheduled_time=timezone.now(),
+                sent=True,
+                sent_time=timezone.now()
+            )
+            return f"Message sent to {self.recipients}"
+        except Exception as e:
+            self.logger.error(f"Error sending message to {self.recipients}: {e}")
+            Message.objects.create(
+                instagram_account=self.instagram_account,
+                recipient=self.recipients,
+                content=self.message,
+                scheduled_time=timezone.now(),
+                sent=False,
+                sent_time=timezone.now(),
+                error=str(e)
+            )
+            return f"Failed to send message to {self.recipients}: {str(e)}"
 
     def logout(self):
-        try:
-            # profile_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[1]/div[1]/div/div/div/div/div[2]/div[8]/div/span/div/a/div/div/div/div/span"
-            # self.bot.find_element(By.XPATH, profile_xpath).click()
-            
-            profile_ = WebDriverWait(self.bot, 3).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "span[role='link'][tabindex='-1']"))
-            # EC.element_to_be_clickable((By.XPATH, '//svg[@aria-label="Settings"]'))
-            )
-            print("first DONE nfjksdjf")
-            profile_.click()
-
-            time.sleep(1)
-            print("inside Logout 11111111111111111111111")
-            # setting_icon_xpath = "/html/body/div[2]/div/div/div[2]/div/div/div[1]/div[2]/div/div[2]/section/main/div/header/section[2]/div/div/div[3]/div/div"
-            # self.bot.find_element(By.XPATH, setting_icon_xpath).click()
-
-            try:
-                setting_ = WebDriverWait(self.bot, 3).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, "div[role='button'][tabindex='0']"))
-                )
-                setting_.click()
-                print("Second DONE nfjksdjf")
-
-            except Exception as e:
-                print(f"An error occurred 11111111111111111: {e}")
-
-            time.sleep(1)
-            print("inside Logout 22222222222222222222222")
-            # logout_xpath = "/html/body/div[6]/div[1]/div/div[2]/div/div/div/div/div/button[7]"
-            # self.bot.find_element(By.XPATH, logout_xpath).click()
-
-            try:
-                # logout_ = WebDriverWait(self.bot, 10).until(
-                #     # EC.element_to_be_clickable((By.CSS_SELECTOR, "button[tabindex='0']"))
-                #     EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]')),
-                # )
-                # logout_.click()
-
-
-                try:
-                    # Try to click the button using CSS Selector
-                    log_out_button = WebDriverWait(self.bot, 10).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.xjbqb8w.x1qhh985.xcfux6l.xm0m39n.x1yvgwvq.x13fuv20.x178xt8z.x1ypdohk.xvs91rp.x1evy7pa.xdj266r.x11i5rnm.xat24cr.x1mh8g0r.x1wxaq2x.x1iorvi4.x1sxyh0.xjkvuk6.xurb0ha.x2b8uid.x87ps6o.xxymvpz.xh8yej3.x52vrxo.x4gyw5p.x5n08af'))
-                    )
-                    log_out_button.click()
-                    print("Clicked on the element using CSS Selector")
-                except Exception as e_css:
-                    print(f"CSS Selector failed: {e_css}")
-                    
-                    try:
-                        # Try to click the button using XPath
-                        log_out_button = WebDriverWait(self.bot, 10).until(
-                            EC.element_to_be_clickable((By.XPATH, '//button[text()="Log Out"]'))
-                        )
-                        log_out_button.click()
-                        print("Clicked on the element using XPath")
-                    except Exception as e_xpath:
-                        print(f"XPath failed: {e_xpath}")
-                        
-                        try:
-                            # Try to click the button using Class Name
-                            log_out_button = WebDriverWait(self.bot, 10).until(
-                                EC.element_to_be_clickable((By.CLASS_NAME, 'xjbqb8w'))
-                            )
-                            log_out_button.click()
-                            print("Clicked on the element using Class Name")
-                        except Exception as e_class:
-                            print(f"Class Name failed: {e_class}")
-                            
-                            try:
-                                # Try to click the button using Partial Link Text
-                                log_out_button = WebDriverWait(self.bot, 10).until(
-                                    EC.element_to_be_clickable((By.PARTIAL_LINK_TEXT, 'Log Out'))
-                                )
-                                log_out_button.click()
-                                print("Clicked on the element using Partial Link Text")
-                            except Exception as e_partial_link:
-                                print(f"Partial Link Text failed: {e_partial_link}")
-                                print("All methods failed to click the element")
-                print("Third DONE nfjksdjf")
-            except Exception as e:
-                print(f"An error occurred 22222222222222222: {e}")
-
-
-            print("inside Logout 33333333333333333333333")
-            time.sleep(2)
-        except Exception as e:
-            self.logger.error(f"An error occurred during logout: {e}")
-
-    def close_browser(self):
-        self.logout()
-        print("Logout DONE")
-        time.sleep(3)
-        print("Closing Browser")
-        self.bot.quit()
+        self.client.logout()
+        self.logger.info(f"Logged out {self.username}")
 
 def single_send_messages(account):
     username = account['username']
@@ -2785,17 +3155,38 @@ def single_send_messages(account):
     recipients = account['recipients']
     message = account['message']
     instagram_account = account['instagram_account']
+
+    # try:
+    #     instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
+    #     result = instagram_bot.send_message()
+    #     instagram_bot.logout()
+    #     # return f"Messages sent from {username} to {recipients}"
+    #     if result:
+    #         # return result
+    #         return f"Messages sent from {username} to {recipients}"
+    # except Exception as e:
+    #     return f"Failed to send messages from {username}: {str(e)}"
+
     try:
-        # instagram_bot = InstagramBot(username, password, recipients, message)
-
         instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
-
-        # instagram_bot.close_browser()
-        return f"Messages sent from {username} to {recipients}"
+        result = instagram_bot.send_message()
+        instagram_bot.logout()
+        return result  # Return the result directly
     except Exception as e:
-        # self.logger.error(f"An error occurred with account {username}: {e}")
-        return f"Failed to send messages from {username}: {str(e)}"
-   
+        error_message = f"Failed to send messages from {username} to {recipients}: {str(e)}"
+        logging.error(error_message)
+        return error_message  # Return the error message
+
+
+
+
+
+
+
+
+
+
+
 
 
    
