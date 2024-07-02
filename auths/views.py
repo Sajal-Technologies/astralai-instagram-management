@@ -461,7 +461,7 @@ class AdminViewAllUsers(APIView):
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, format=None):
+    def get(self, request, format=None):
         user_id = get_user_id_from_token(request)
         user, is_superuser = IsSuperUser(user_id)
 
