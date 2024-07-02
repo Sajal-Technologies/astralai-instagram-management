@@ -875,7 +875,7 @@ class SaveLeadData(APIView):
 
 
 class GetLeaddata(APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
 
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
@@ -1088,7 +1088,7 @@ class AddMessageTemplate(APIView):
 
 
 class GetMessageTemplate(APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
 
         user_id = get_user_id_from_token(request)
         user = CustomUser.objects.filter(id=user_id).first()
