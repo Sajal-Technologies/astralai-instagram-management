@@ -372,7 +372,7 @@ class AdminViewUsers(APIView):
     """
     renderer_classes = [UserRenderer]
     permission_classes = [IsAuthenticated]
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         
 
         user_id = get_user_id_from_token(request)
