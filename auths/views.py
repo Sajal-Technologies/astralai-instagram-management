@@ -1785,7 +1785,7 @@ class InstagramBot:
                 self.task.save()
                 continue
             finally:
-                minute_ = random.randint(1, 4)
+                minute_ = random.randint(4, 7)
                 print(f"Sleeping for {minute_} minutes...")
                 time.sleep(minute_ * 60)
                 print("Awake now!")
