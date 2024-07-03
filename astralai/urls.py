@@ -75,13 +75,13 @@ urlpatterns = [
 
     path('api/get-message-time/', GetMessagewithtime.as_view(), name='api-GetMessagewithtime'),  
 
-    path('api/insta_messages/', InstagramBotView.as_view(), name='api-InstagramBotView'),
+    path('api/single-insta-messages/', InstagramBotView.as_view(), name='api-InstagramBotView'),
 
     path('api/add-message/', AddMessage.as_view(), name='api-AddMessage'), 
 
     path('api/delete-message/', deleteMessage.as_view(), name='api-deleteMessage'), 
 
-    path('api/single-insta-messages/', SingleInstaMessageView.as_view(), name='api-SingleInstaMessageView'),
+    path('api/one-insta-messages/', SingleInstaMessageView.as_view(), name='api-SingleInstaMessageView'),
 
     path('api/task-status/', TaskStatusView.as_view(), name='api-TaskStatusView'),
 
