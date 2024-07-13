@@ -1738,19 +1738,35 @@ class InstagramBot:
             logging.error(f"Login required for {self.username}: {e}")
             self.task.error_message = "Login required"
             self.task.save()
-            return
+            # return
+            raise e  # Stop execution by raising the exception
         except ClientError as e:
             print(f"Client error: {e}")
+            mess = Message.objects.create(
+                    instagram_account=self.instagram_account,
+                    recipient=recipients,
+                    content=message[0],
+                    scheduled_time=timezone.now(),
+                    sent=False,
+                    sent_time=timezone.now()
+                )
             logging.error(f"Client error for {self.username}: {e}")
-            self.task.error_message = "Client error"
+            # self.task.message = mess
+            self.task.failed_messages = len(recipients)
+            self.task.message.add(mess)
+            self.task.error_message = f"Client error: {e}"
+            self.task.status = "Failed"
             self.task.save()
-            return
+            # return
+            raise e  # Stop execution by raising the exception
         
         self.task.status = 'in_progress'
         self.task.save()
+        print("HELLO HOW AR YOU")
         self.send_messages()
 
     def send_messages(self):
+        print("HELLO from send message")
         for recipient, message in zip(self.recipients, self.message[0]):
             try:
                 user_id = self.client.user_id_from_username(recipient)
