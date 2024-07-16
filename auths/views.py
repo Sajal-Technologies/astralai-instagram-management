@@ -1719,15 +1719,26 @@ from .models import instagram_accounts, Message, Task, MessageTemplate
 from django.utils import timezone
 import os
 
+
+def read_proxies_from_file(filename):
+    with open(filename, 'r') as f:
+        proxies = [line.strip() for line in f.readlines()]
+    return proxies
+
+
 class InstagramBot:
-    def __init__(self, username, password, recipients, message, instagram_account, task):
+    def __init__(self, username, password, recipients, message, instagram_account, task, proxies):
         self.username = username
         self.password = password
         self.recipients = recipients
         self.message = message
         self.instagram_account = instagram_account
         self.task = task
-        self.client = Client()
+        self.proxies = proxies  # List of proxies
+
+        # Initialize Client with a random proxy
+        self.client = Client(proxy=random.choice(self.proxies))
+        # self.client = Client()
 
         logging.basicConfig(level=logging.DEBUG)
         try:
@@ -1741,24 +1752,41 @@ class InstagramBot:
             # return
             raise e  # Stop execution by raising the exception
         except ClientError as e:
-            print(f"Client error: {e}")
-            mess = Message.objects.create(
-                    instagram_account=self.instagram_account,
-                    recipient=recipients,
-                    content=message[0],
-                    scheduled_time=timezone.now(),
-                    sent=False,
-                    sent_time=timezone.now()
-                )
-            logging.error(f"Client error for {self.username}: {e}")
-            # self.task.message = mess
-            self.task.failed_messages = len(recipients)
-            self.task.message.add(mess)
-            self.task.error_message = f"Client error: {e}"
-            self.task.status = "Failed"
-            self.task.save()
-            # return
-            raise e  # Stop execution by raising the exception
+            if 'challenge_required' in str(e):
+                logging.error(f"challenge required error for {self.username}: {e}")
+                mess = Message.objects.create(
+                        instagram_account=self.instagram_account,
+                        recipient=recipients,
+                        content=message[0],
+                        scheduled_time=timezone.now(),
+                        sent=False,
+                        sent_time=timezone.now()
+                    )
+                self.task.message.add(mess)
+                self.task.failed_messages = len(recipients)
+                self.task.status = 'failed'
+                self.task.error_message = "Login required: Challenge encountered"
+                self.task.save()
+                raise e  # Stop execution by raising the exception
+            else:
+                print(f"Client error: {e}")
+                mess = Message.objects.create(
+                        instagram_account=self.instagram_account,
+                        recipient=recipients,
+                        content=message[0],
+                        scheduled_time=timezone.now(),
+                        sent=False,
+                        sent_time=timezone.now()
+                    )
+                logging.error(f"Client error for {self.username}: {e}")
+                # self.task.message = mess
+                self.task.failed_messages = len(recipients)
+                self.task.message.add(mess)
+                self.task.error_message = f"Client error: {e}"
+                self.task.status = "Failed"
+                self.task.save()
+                # return
+                raise e  # Stop execution by raising the exception
         
         self.task.status = 'in_progress'
         self.task.save()
@@ -1825,9 +1853,10 @@ def send_messages(account):
     message = account['message']
     instagram_account = account['instagram_account']
     task = account['task']
+    proxies = account['proxies']
     print("After Getting all variable")
     try:
-        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task)
+        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task,proxies)
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
@@ -1876,6 +1905,9 @@ class InstagramBotView(APIView):
         recipient_list = data.get('recipient_list')
         custom_message = data.get("custom_message")
 
+        proxies = read_proxies_from_file(r"auths\astralai-proxy-australia-https.txt")
+
+
         if not custom_message:
             messages = []
             date = data.get('date', 'Date')
@@ -1915,7 +1947,7 @@ class InstagramBotView(APIView):
         password = instagram_account.password
 
         accounts = [
-            {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task},
+            {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task, 'proxies': proxies},
         ]
 
         max_simultaneous_logins = 5
@@ -3059,6 +3091,8 @@ class SingleInstaMessageView(APIView):
         message_list = request.data.get('message_list')
         custom_message = request.data.get('custom_message')
 
+        proxies = read_proxies_from_file(r"auths\astralai-proxy-australia-https.txt")
+
         if not message_list and not custom_message:
             return Response({"Message": "message not found!!!!"})
         
@@ -3099,7 +3133,7 @@ class SingleInstaMessageView(APIView):
         password = ins.password
 
         accounts = [
-            {'username': username, 'password': password, 'recipients': recipient_list[0], 'message': message_content, 'instagram_account': ins}
+            {'username': username, 'password': password, 'recipients': recipient_list[0], 'message': message_content, 'instagram_account': ins, 'proxies': proxies}
         ]
 
         max_simultaneous_logins = 10
@@ -3112,14 +3146,18 @@ class SingleInstaMessageView(APIView):
         return JsonResponse({'results': results})
 
 class SingleInstagramBot:
-    def __init__(self, username, password, recipients, message, instagram_account):
+    def __init__(self, username, password, recipients, message, instagram_account, proxies):
         self.username = username
         self.password = password
         self.recipients = recipients
         self.message = message
         self.instagram_account = instagram_account
+        self.proxies = proxies  # List of proxies
 
-        self.client = Client()
+        # Initialize Client with a random proxy
+        self.client = Client(proxy=random.choice(self.proxies))
+
+        # self.client = Client()
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -3171,6 +3209,7 @@ def single_send_messages(account):
     recipients = account['recipients']
     message = account['message']
     instagram_account = account['instagram_account']
+    proxies = account['proxies']
 
     # try:
     #     instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
@@ -3184,7 +3223,7 @@ def single_send_messages(account):
     #     return f"Failed to send messages from {username}: {str(e)}"
 
     try:
-        instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account)
+        instagram_bot = SingleInstagramBot(username, password, recipients, message, instagram_account,proxies)
         result = instagram_bot.send_message()
         instagram_bot.logout()
         return result  # Return the result directly
