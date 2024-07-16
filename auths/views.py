@@ -3156,6 +3156,11 @@ class SingleInstagramBot:
 
         # Initialize Client with a random proxy
         self.client = Client(proxy=random.choice(self.proxies))
+        try:
+            self.logger.info(f"Client {self.client}")
+            # print(self.client)
+        except:
+            pass
 
         # self.client = Client()
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
