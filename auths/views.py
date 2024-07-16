@@ -1905,7 +1905,7 @@ class InstagramBotView(APIView):
         recipient_list = data.get('recipient_list')
         custom_message = data.get("custom_message")
 
-        proxies = read_proxies_from_file(r"auths\astralai-proxy-australia-https.txt")
+        proxies = read_proxies_from_file(r"astralai-proxy-australia-https.txt")
 
 
         if not custom_message:
@@ -3091,7 +3091,7 @@ class SingleInstaMessageView(APIView):
         message_list = request.data.get('message_list')
         custom_message = request.data.get('custom_message')
 
-        proxies = read_proxies_from_file(r"auths\astralai-proxy-australia-https.txt")
+        proxies = read_proxies_from_file(r"astralai-proxy-australia-https.txt")
 
         if not message_list and not custom_message:
             return Response({"Message": "message not found!!!!"})
