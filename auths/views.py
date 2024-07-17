@@ -1737,10 +1737,14 @@ class InstagramBot:
         self.proxies = proxies  # List of proxies
 
         # Initialize Client with a random proxy
-        self.client = Client(proxy=random.choice(self.proxies))
+        selected_proxy = random.choice(self.proxies)
+
+        self.client = Client(proxy=selected_proxy)
         # self.client = Client()
 
         logging.basicConfig(level=logging.DEBUG)
+
+        logging.error(f"Login required for {Client(proxy=selected_proxy)}")
         try:
             self.client.login(username, password)
             print("Login SUCCESSFUL")
