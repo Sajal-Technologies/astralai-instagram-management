@@ -1766,8 +1766,22 @@ class InstagramBot:
         # Configure requests session with proxy
         session = requests.Session()
     
+        # self.client = Client()
+        # self.client.proxy = selected_proxy 
+
+
         self.client = Client()
-        self.client.proxy = selected_proxy 
+        before_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("Before Proxy",before_ip)
+        # cl.set_proxy("http://<api_key>:wifi;ca;;;toronto@proxy.soax.com:9137")
+        self.client.delay_range = [1, 3]
+        self.client.set_proxy(selected_proxy)
+        after_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("After Proxy",after_ip)
+
+
+
+
 
         # self.client = Client(proxy=random.choice(self.proxies))
         self.client.challenge_code_handler = challenge_code_handler
@@ -1778,7 +1792,8 @@ class InstagramBot:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
-        print(proxy_finder(selected_proxy))
+        # print(proxy_finder(selected_proxy))
+        print("After Proxy",after_ip)
 
 
         # logging.basicConfig(level=logging.DEBUG)
@@ -3297,8 +3312,17 @@ class SingleInstagramBot:
         # }
 
         # Initialize instagrapi Client with proxy
+        # self.client = Client()
+        # self.client.proxy = selected_proxy  # Set proxy directly on the Client instance
+
         self.client = Client()
-        self.client.proxy = selected_proxy  # Set proxy directly on the Client instance
+        before_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("Before Proxy",before_ip)
+        # cl.set_proxy("http://<api_key>:wifi;ca;;;toronto@proxy.soax.com:9137")
+        self.client.delay_range = [1, 3]
+        self.client.set_proxy(selected_proxy)
+        after_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("After Proxy",after_ip)
 
 
         # print("the selected IP is as follows",selected_proxy)
@@ -3318,7 +3342,8 @@ class SingleInstagramBot:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
-        print(proxy_finder(selected_proxy))
+        # print(proxy_finder(selected_proxy))
+        print("After Proxy",after_ip)
 
         try:
             self.client.login(username, password)
