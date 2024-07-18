@@ -846,8 +846,13 @@ class SaveLeadData(APIView):
 
         data = request.data  # Assuming data is sent as JSON
 
-        # Generate a new unique CSV file number
-        csv_file_number = str(uuid.uuid4())
+
+        if len(data['leads']) == 1:
+            csv_file_number = "manually_created"
+        
+        else:
+            # Generate a new unique CSV file number
+            csv_file_number = str(uuid.uuid4())
 
         for lead_data in data['leads']:
             name = lead_data.get('name')
@@ -1717,13 +1722,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import instagram_accounts, Message, Task, MessageTemplate
 from django.utils import timezone
-import os
+import os, requests
 
 
 def read_proxies_from_file(filename):
     with open(filename, 'r') as f:
         proxies = [line.strip() for line in f.readlines()]
     return proxies
+
+def get_proxy_ip(proxy): #NEWCODE
+    try:
+        response = requests.get("https://api.ipify.org?format=json", proxies={"http": proxy, "https": proxy})
+        ip_data = response.json()
+        print(f"Proxy IP Address: {ip_data['ip']}")
+    except Exception as e:
+        print(f"Failed to get proxy IP: {e}")
 
 
 class InstagramBot:
@@ -1736,19 +1749,47 @@ class InstagramBot:
         self.task = task
         self.proxies = proxies  # List of proxies
 
+        # # Initialize Client with a random proxy
+        # selected_proxy = random.choice(self.proxies)
+
+        # self.client = Client(proxy=selected_proxy)
+        # # self.client = Client()
+
+        # self.proxies = proxies  # List of proxies
+
+        # # print("The proxi list is as follows",proxies)
+
+
         # Initialize Client with a random proxy
         selected_proxy = random.choice(self.proxies)
 
-        self.client = Client(proxy=selected_proxy)
-        # self.client = Client()
+        # Configure requests session with proxy
+        session = requests.Session()
+    
+        self.client = Client()
+        self.client.proxy = selected_proxy 
 
-        logging.basicConfig(level=logging.DEBUG)
+        # self.client = Client(proxy=random.choice(self.proxies))
+        self.client.challenge_code_handler = challenge_code_handler
 
-        logging.error(f"Login required for {Client(proxy=selected_proxy)}")
+        self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        self.logger.addHandler(stream_handler)
+        print(proxy_finder(selected_proxy))
+
+
+        # logging.basicConfig(level=logging.DEBUG)
+
+        # logging.info(f"Login required for {Client(proxy=selected_proxy)}")
         try:
             self.client.login(username, password)
+            logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             print("Login SUCCESSFUL")
         except ClientLoginRequired as e:
+            logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             print(f"Login required: {e}")
             logging.error(f"Login required for {self.username}: {e}")
             self.task.error_message = "Login required"
@@ -1757,6 +1798,7 @@ class InstagramBot:
             raise e  # Stop execution by raising the exception
         except ClientError as e:
             if 'challenge_required' in str(e):
+                logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
                 logging.error(f"challenge required error for {self.username}: {e}")
                 mess = Message.objects.create(
                         instagram_account=self.instagram_account,
@@ -1773,6 +1815,7 @@ class InstagramBot:
                 self.task.save()
                 raise e  # Stop execution by raising the exception
             else:
+                logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
                 print(f"Client error: {e}")
                 mess = Message.objects.create(
                         instagram_account=self.instagram_account,
@@ -1791,6 +1834,7 @@ class InstagramBot:
                 self.task.save()
                 # return
                 raise e  # Stop execution by raising the exception
+        logging.info(get_proxy_ip(selected_proxy)) #NEWCODE
         
         self.task.status = 'in_progress'
         self.task.save()
@@ -1909,7 +1953,7 @@ class InstagramBotView(APIView):
         recipient_list = data.get('recipient_list')
         custom_message = data.get("custom_message")
 
-        proxies = read_proxies_from_file(r"astralai-proxy-australia-https.txt")
+        proxies = read_proxies_from_file(r"rotating-proxies-astralai-https.txt")
 
 
         if not custom_message:
@@ -3066,7 +3110,10 @@ class GetMessagewithtime(APIView):
 #         # self.logger.error(f"An error occurred with account {username}: {e}")
 #         return f"Failed to send messages from {username}: {str(e)}"
    
-
+import imaplib
+import email
+from instagrapi.mixins.challenge import ChallengeChoice
+import re
 
 from instagrapi import Client
 from rest_framework.views import APIView
@@ -3095,7 +3142,7 @@ class SingleInstaMessageView(APIView):
         message_list = request.data.get('message_list')
         custom_message = request.data.get('custom_message')
 
-        proxies = read_proxies_from_file(r"astralai-proxy-australia-https.txt")
+        proxies = read_proxies_from_file(r"rotating-proxies-astralai-https.txt")
 
         if not message_list and not custom_message:
             return Response({"Message": "message not found!!!!"})
@@ -3149,7 +3196,76 @@ class SingleInstaMessageView(APIView):
                 results.append(future.result())
         return JsonResponse({'results': results})
 
+# Email credentials for fetching OTP
+CHALLENGE_EMAIL = "accountmanager@ample-automation.com"
+CHALLENGE_PASSWORD = "Ai_Service24"
+import poplib
+
+def challenge_code_handler(username, choice):
+    if choice == ChallengeChoice.EMAIL:
+        return get_code_from_email(username)
+    return False
+
+def get_code_from_email(username):
+    mail = imaplib.IMAP4_SSL("outlook.office365.com")
+    mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+    mail.select("inbox")
+    result, data = mail.search(None, "(UNSEEN)")
+    assert result == "OK", "Error1 during get_code_from_email: %s" % result
+    ids = data.pop().split()
+    for num in reversed(ids):
+        mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+        result, data = mail.fetch(num, "(RFC822)")
+        assert result == "OK", "Error2 during get_code_from_email: %s" % result
+        msg = email.message_from_string(data[0][1].decode())
+        payloads = msg.get_payload()
+        if not isinstance(payloads, list):
+            payloads = [msg]
+        code = None
+        for payload in payloads:
+            body = payload.get_payload(decode=True).decode()
+            if "<div" not in body:
+                continue
+            match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+            if not match:
+                continue
+            print("Match from email:", match.group(1))
+            match = re.search(r">(\d{6})<", body)
+            if not match:
+                print('Skip this email, "code" not found')
+                continue
+            code = match.group(1)
+            if code:
+                return code
+    return False
+
+
+def proxy_finder(pr):
+    # Define proxy dict.
+    proxies = {
+    'http': f'{pr}',
+    'https': f'{pr}',
+    }
+
+    data = {
+        'Your POST JSON': 'data'
+    }
+
+    response = requests.post(
+        'https://ip.oxylabs.io/location',
+        verify=False,  # It is required to ignore certificate
+        proxies=proxies,
+        json=data,
+    )
+
+    # Print result page to stdout
+    print(response.text)
+    return response.text
+
+
+
 class SingleInstagramBot:
+    from instagrapi import Client
     def __init__(self, username, password, recipients, message, instagram_account, proxies):
         self.username = username
         self.password = password
@@ -3158,21 +3274,51 @@ class SingleInstagramBot:
         self.instagram_account = instagram_account
         self.proxies = proxies  # List of proxies
 
+        # print("The proxi list is as follows",proxies)
+
+
         # Initialize Client with a random proxy
-        self.client = Client(proxy=random.choice(self.proxies))
-        try:
-            self.logger.info(f"Client {self.client}")
-            # print(self.client)
-        except:
-            pass
+        selected_proxy = random.choice(self.proxies)
+
+        # self.client = Client(proxy='https://adilalpha_qcvi6:Rampur1=Rampur1=@unblock.oxylabs.io:60000')
+
+        # Configure requests session with proxy
+        session = requests.Session()
+        # session.proxies = {
+        #     'http': 'http://adilalpha_qcvi6:Rampur1=Rampur1=@unblock.oxylabs.io:60000',
+        #     'https': 'http://adilalpha_qcvi6:Rampur1=Rampur1=@unblock.oxylabs.io:60000',
+        # }
+
 
         # self.client = Client()
+        # self.client.session.proxies = {
+        #     'http': selected_proxy,
+        #     'https': selected_proxy,
+        # }
+
+        # Initialize instagrapi Client with proxy
+        self.client = Client()
+        self.client.proxy = selected_proxy  # Set proxy directly on the Client instance
+
+
+        # print("the selected IP is as follows",selected_proxy)
+
+        # print(proxy_finder(selected_proxy))
+
+
+
+
+
+        # self.client = Client(proxy=random.choice(self.proxies))
+        self.client.challenge_code_handler = challenge_code_handler
+
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
+        print(proxy_finder(selected_proxy))
 
         try:
             self.client.login(username, password)
@@ -3211,6 +3357,71 @@ class SingleInstagramBot:
     def logout(self):
         self.client.logout()
         self.logger.info(f"Logged out {self.username}")
+
+
+
+# class SingleInstagramBot:
+#     def __init__(self, username, password, recipients, message, instagram_account, proxies):
+#         self.username = username
+#         self.password = password
+#         self.recipients = recipients
+#         self.message = message
+#         self.instagram_account = instagram_account
+#         self.proxies = proxies  # List of proxies
+
+#         # Initialize Client with a random proxy
+#         self.client = Client(proxy=random.choice(self.proxies))
+#         try:
+#             self.logger.info(f"Client {self.client}")
+#             # print(self.client)
+#         except:
+#             pass
+
+#         # self.client = Client()
+#         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
+#         self.logger.setLevel(logging.INFO)
+#         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+#         stream_handler = logging.StreamHandler()
+#         stream_handler.setFormatter(formatter)
+#         self.logger.addHandler(stream_handler)
+
+#         try:
+#             self.client.login(username, password)
+#             self.logger.info(f"Logged in successfully as {username}")
+#         except Exception as e:
+#             self.logger.error(f"Error during login for {self.username}: {e}")
+#             raise e
+
+#     def send_message(self):
+#         try:
+#             user_id = self.client.user_id_from_username(self.recipients)
+#             self.client.direct_send(self.message, [user_id])
+#             self.logger.info(f"Message sent to {self.recipients}")
+#             Message.objects.create(
+#                 instagram_account=self.instagram_account,
+#                 recipient=self.recipients,
+#                 content=self.message,
+#                 scheduled_time=timezone.now(),
+#                 sent=True,
+#                 sent_time=timezone.now()
+#             )
+#             return f"Message sent to {self.recipients}"
+#         except Exception as e:
+#             self.logger.error(f"Error sending message to {self.recipients}: {e}")
+#             Message.objects.create(
+#                 instagram_account=self.instagram_account,
+#                 recipient=self.recipients,
+#                 content=self.message,
+#                 scheduled_time=timezone.now(),
+#                 sent=False,
+#                 sent_time=timezone.now(),
+#                 error=str(e)
+#             )
+#             return f"Failed to send message to {self.recipients}: {str(e)}"
+
+#     def logout(self):
+#         self.client.logout()
+#         self.logger.info(f"Logged out {self.username}")
 
 def single_send_messages(account):
     username = account['username']
