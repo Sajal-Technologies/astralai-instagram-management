@@ -2116,7 +2116,13 @@ class AddMessage(APIView):
         except ValueError:
             return Response({'Message': 'Invalid scheduled_time format'}, status=status.HTTP_400_BAD_REQUEST)
         
-        instagram_account = instagram_accounts.objects.get(id=instagram_account_id)
+        # instagram_account = instagram_accounts.objects.get(id=instagram_account_id)
+        try:
+            instagram_account = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        except:
+            instagram_account = instagram_accounts.objects.filter(username=instagram_account_id).first()
+
+
         sent = False
 
         if not recipient or not instagram_account:
