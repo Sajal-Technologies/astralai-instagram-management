@@ -3136,6 +3136,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+from html import unescape
 
 class SingleInstaMessageView(APIView):
 
@@ -3222,10 +3223,14 @@ def challenge_code_handler(username, choice):
     return False
 
 def get_code_from_email(username):
-    mail = imaplib.IMAP4_SSL("outlook.office365.com")
+    mail = imaplib.IMAP4_SSL("imap.hostinger.com")
+    print("Logging in to Mail")
     mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+    print("Logged in to Mail")
     mail.select("inbox")
+    print("Selected Inbox")
     result, data = mail.search(None, "(UNSEEN)")
+    print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
     assert result == "OK", "Error1 during get_code_from_email: %s" % result
     ids = data.pop().split()
     for num in reversed(ids):
@@ -3237,18 +3242,30 @@ def get_code_from_email(username):
         if not isinstance(payloads, list):
             payloads = [msg]
         code = None
+                
         for payload in payloads:
             body = payload.get_payload(decode=True).decode()
+            body = unescape(body)  # Decode HTML entities
+            body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
             if "<div" not in body:
                 continue
+            print("FOUND BODY WITH DIV IN MAIL")
             match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
             if not match:
-                continue
-            print("Match from email:", match.group(1))
+                match = re.search(f">{username}[^<]*?<", body)
+                if not match:
+                    username_pattern = f"Hi,\\s*{username},"
+                    match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+                    if not match:
+                        print("MATCH NOT FOUND")
+                        continue
+            print("Match from email found")
             match = re.search(r">(\d{6})<", body)
             if not match:
-                print('Skip this email, "code" not found')
-                continue
+                match = re.search(r'\b\d{6}\b', body)
+                if not match:
+                    print('Skip this email, "code" not found')
+                    continue
             code = match.group(1)
             if code:
                 return code
