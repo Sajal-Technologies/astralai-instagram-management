@@ -1954,8 +1954,10 @@ class InstagramBotView(APIView):
         
         custom_message = request.data.get("custom_message")
         message_list = request.data.get('message_list')
-
-        ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        try:
+            ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        except:
+            ins = instagram_accounts.objects.filter(username=instagram_account_id).first()
         total_messages = len(recipient_list)
         task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
         response_data = {'task_id': task.id}
@@ -3194,7 +3196,12 @@ class SingleInstaMessageView(APIView):
             except:    
                 message_content = custom_message
 
-        ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        # ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        try:
+            ins = instagram_accounts.objects.filter(id=instagram_account_id).first()
+        except:
+            ins = instagram_accounts.objects.filter(username=instagram_account_id).first()
+
         if not ins:
             return Response({"Message": "Instagram account not found"}, status=404)
 
