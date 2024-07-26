@@ -1765,12 +1765,12 @@ class InstagramBot:
         session = requests.Session()
     
         self.client = Client()
-        before_ip = self.client._send_public_request("https://api.ipify.org/")
-        print("Before Proxy",before_ip)
+        # before_ip = self.client._send_public_request("https://api.ipify.org/")
+        # print("Before Proxy",before_ip)
         self.client.delay_range = [1, 3]
         self.client.set_proxy(selected_proxy)
-        after_ip = self.client._send_public_request("https://api.ipify.org/")
-        print("After Proxy",after_ip)
+        # after_ip = self.client._send_public_request("https://api.ipify.org/")
+        # print("After Proxy",after_ip)
 
 
         self.client.challenge_code_handler = challenge_code_handler
@@ -1781,7 +1781,7 @@ class InstagramBot:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
-        print("After Proxy",after_ip)
+        # print("After Proxy",after_ip)
 
         try:
             self.client.login(username, password)
