@@ -1773,6 +1773,67 @@ class InstagramBot:
         print("After Proxy",after_ip)
 
 
+        # =====================================================================Challenge Handler code ====================================
+
+        def challenge_code_handler(username, choice):
+            if choice == ChallengeChoice.EMAIL:
+                print("inside challange choice: ",self.client._send_public_request("https://api.ipify.org/"))
+                return get_code_from_email(username)
+            return False
+
+        def get_code_from_email(username):
+            mail = imaplib.IMAP4_SSL("imap.hostinger.com")
+            print("Logging in to Mail")
+            print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
+            mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+            print("inside challange After login: ",self.client._send_public_request("https://api.ipify.org/"))
+            print("Logged in to Mail")
+            mail.select("inbox")
+            print("Selected Inbox")
+            result, data = mail.search(None, "(UNSEEN)")
+            print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            ids = data.pop().split()
+            for num in reversed(ids):
+                mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+                result, data = mail.fetch(num, "(RFC822)")
+                assert result == "OK", "Error2 during get_code_from_email: %s" % result
+                msg = email.message_from_string(data[0][1].decode())
+                payloads = msg.get_payload()
+                if not isinstance(payloads, list):
+                    payloads = [msg]
+                code = None
+                        
+                for payload in payloads:
+                    body = payload.get_payload(decode=True).decode()
+                    body = unescape(body)  # Decode HTML entities
+                    body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+                    if "<div" not in body:
+                        continue
+                    print("FOUND BODY WITH DIV IN MAIL")
+                    match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+                    if not match:
+                        match = re.search(f">{username}[^<]*?<", body)
+                        if not match:
+                            username_pattern = f"Hi,\\s*{username},"
+                            match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+                            if not match:
+                                print("MATCH NOT FOUND")
+                                continue
+                    print("Match from email found")
+                    match = re.search(r">(\d{6})<", body)
+                    if not match:
+                        match = re.search(r'\b\d{6}\b', body)
+                        if not match:
+                            print('Skip this email, "code" not found')
+                            continue
+                    code = match.group(1)
+                    if code:
+                        return code
+            return False
+        # =====================================================================Challenge Handler code ====================================
+
+
         self.client.challenge_code_handler = challenge_code_handler
 
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
