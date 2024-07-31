@@ -1765,12 +1765,12 @@ class InstagramBot:
         session = requests.Session()
     
         self.client = Client()
-        # before_ip = self.client._send_public_request("https://api.ipify.org/")
-        # print("Before Proxy",before_ip)
+        before_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("Before Proxy",before_ip)
         self.client.delay_range = [1, 3]
         self.client.set_proxy(selected_proxy)
-        # after_ip = self.client._send_public_request("https://api.ipify.org/")
-        # print("After Proxy",after_ip)
+        after_ip = self.client._send_public_request("https://api.ipify.org/")
+        print("After Proxy",after_ip)
 
 
         self.client.challenge_code_handler = challenge_code_handler
@@ -1785,11 +1785,13 @@ class InstagramBot:
 
         try:
             self.client.login(username, password)
-            logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+            # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+            logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print("Login SUCCESSFUL")
             mess.delete()
         except ClientLoginRequired as e:
-            logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+            # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+            logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print(f"Login required: {e}")
             logging.error(f"Login required for {self.username}: {e}")
             self.task.error_message = "Login required"
@@ -1803,7 +1805,8 @@ class InstagramBot:
             raise e  # Stop execution by raising the exception
         except ClientError as e:
             if 'challenge_required' in str(e):
-                logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+                # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 logging.error(f"challenge required error for {self.username}: {e}")
 
                 mess.sent=False
@@ -1826,7 +1829,8 @@ class InstagramBot:
                 self.task.save()
                 raise e  # Stop execution by raising the exception
             else:
-                logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+                # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
+                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 print(f"Client error: {e}")
 
                 mess.sent=False
@@ -1851,7 +1855,8 @@ class InstagramBot:
                 self.task.save()
                 # return
                 raise e  # Stop execution by raising the exception
-        logging.info(get_proxy_ip(selected_proxy)) #NEWCODE
+        # logging.info(get_proxy_ip(selected_proxy)) #NEWCODE
+        logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
         
         self.task.status = 'in_progress'
         self.task.save()
@@ -1877,6 +1882,7 @@ class InstagramBot:
                 self.task.message.add(mess)
                 self.task.save()
                 time.sleep(2)  # Add delay to avoid rate limits
+                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             except ClientError as e:
                 print(f"Error sending message to {recipient}: {e}")
                 logging.error(f"Error sending message to {recipient}: {e}")
@@ -1892,20 +1898,24 @@ class InstagramBot:
                 self.task.message.add(mess)
                 self.task.failed_messages += 1
                 self.task.save()
+                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 continue
             finally:
                 minute_ = random.randint(4, 7)
                 print(f"Sleeping for {minute_} minutes...")
                 time.sleep(minute_ * 60)
                 print("Awake now!")
+                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
 
         self.task.status = 'completed'
         self.task.save()
+        logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
         self.logout()
 
     def logout(self):
         try:
             self.client.logout()
+            logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print("Logged out successfully!")
         except ClientError as e:
             logging.error(f"An error occurred during logout: {e}")
