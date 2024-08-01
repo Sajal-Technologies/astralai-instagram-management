@@ -1740,7 +1740,7 @@ def get_proxy_ip(proxy): #NEWCODE
 
 
 class InstagramBot:
-    def __init__(self, username, password, recipients, message, instagram_account, task, proxies):
+    def __init__(self, username, password, recipients, message, instagram_account, task, proxies, client):
         self.username = username
         self.password = password
         self.recipients = recipients
@@ -1748,6 +1748,7 @@ class InstagramBot:
         self.instagram_account = instagram_account
         self.task = task
         self.proxies = proxies  # List of proxies
+        self.client = client
 
         mess = Message.objects.create(
                         instagram_account=self.instagram_account,
@@ -1759,17 +1760,17 @@ class InstagramBot:
 
 
         # Initialize Client with a random proxy
-        selected_proxy = random.choice(self.proxies)
+        # selected_proxy = random.choice(self.proxies)
 
         # Configure requests session with proxy
         # session = requests.Session()
         # before_ip = self.client._send_public_request("https://api.ipify.org/")
         # print("Before Proxy",before_ip)
 
-        self.client = Client(proxy = selected_proxy)
+        # self.client = Client(proxy = selected_proxy)
         # self.client.delay_range = [1, 3]
         # self.client.set_proxy(selected_proxy)
-        time.sleep(5)
+        # time.sleep(5)
         after_ip = self.client._send_public_request("https://api.ipify.org/")
         print("After Proxy",after_ip)
 
@@ -1992,8 +1993,12 @@ def send_messages(account):
     task = account['task']
     proxies = account['proxies']
     print("After Getting all variable")
+
+    selected_proxy = random.choice(proxies)
+    client = Client(proxy = selected_proxy)
+
     try:
-        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task,proxies)
+        instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task,proxies,client)
         return f"Messages sent from {username} to {recipients}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
