@@ -1765,9 +1765,9 @@ class InstagramBot:
         # session = requests.Session()
     
         self.client = Client()
-        before_ip = self.client._send_public_request("https://api.ipify.org/")
-        print("Before Proxy",before_ip)
-        self.client.delay_range = [1, 3]
+        # before_ip = self.client._send_public_request("https://api.ipify.org/")
+        # print("Before Proxy",before_ip)
+        # self.client.delay_range = [1, 3]
         self.client.set_proxy(selected_proxy)
         after_ip = self.client._send_public_request("https://api.ipify.org/")
         print("After Proxy",after_ip)
