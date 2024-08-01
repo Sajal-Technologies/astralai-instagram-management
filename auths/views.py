@@ -1738,7 +1738,7 @@ def get_proxy_ip(proxy): #NEWCODE
     except Exception as e:
         print(f"Failed to get proxy IP: {e}")
 
-
+from instagrapi.exceptions import LoginRequired
 class InstagramBot:
     def __init__(self, username, password, recipients, message, instagram_account, task, proxies, client):
         self.username = username
@@ -1771,7 +1771,7 @@ class InstagramBot:
         # self.client.delay_range = [1, 3]
         # self.client.set_proxy(selected_proxy)
         # time.sleep(5)
-        after_ip = self.client._send_public_request("https://api.ipify.org/")
+        after_ip = client._send_public_request("https://api.ipify.org/")
         print("After Proxy",after_ip)
 
 
@@ -1779,16 +1779,16 @@ class InstagramBot:
 
         def challenge_code_handler(username, choice):
             if choice == ChallengeChoice.EMAIL:
-                print("inside challange choice: ",self.client._send_public_request("https://api.ipify.org/"))
+                print("inside challange choice: ",client._send_public_request("https://api.ipify.org/"))
                 return get_code_from_email(username)
             return False
 
         def get_code_from_email(username):
             mail = imaplib.IMAP4_SSL("imap.hostinger.com")
             print("Logging in to Mail")
-            print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
+            print("inside challange Before login: ",client._send_public_request("https://api.ipify.org/"))
             mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
-            print("inside challange After login: ",self.client._send_public_request("https://api.ipify.org/"))
+            print("inside challange After login: ",client._send_public_request("https://api.ipify.org/"))
             print("Logged in to Mail")
             mail.select("inbox")
             print("Selected Inbox")
@@ -1836,7 +1836,7 @@ class InstagramBot:
         # =====================================================================Challenge Handler code ====================================
 
 
-        self.client.challenge_code_handler = challenge_code_handler
+        client.challenge_code_handler = challenge_code_handler
 
         self.logger = logging.getLogger(f"SingleInstagramBot-{username}")
         self.logger.setLevel(logging.INFO)
@@ -1846,8 +1846,111 @@ class InstagramBot:
         self.logger.addHandler(stream_handler)
         # print("After Proxy",after_ip)
 
+        def login_user(USERNAME, PASSWORD, logger, cl):
+            """
+            Attempts to login to Instagram using either the provided session information
+            or the provided username and password.
+            """
+            session_file = "session.json"
+            
+            # Load existing session
+            # session = cl.load_settings(session_file)
+
+            login_via_session = False
+            login_via_pw = False
+
+            # if session:
+            try:
+                session = cl.load_settings(session_file)
+                try:
+                    cl.set_settings(session)
+                    cl.login(USERNAME, PASSWORD)
+
+                    # Check if session is still valid
+                    try:
+                        cl.get_timeline_feed()
+                        login_via_session = True
+                    except LoginRequired:
+                        logger.info("Session is invalid, need to login via username and password")
+
+                        # Refresh device UUIDs
+                        old_session = cl.get_settings()
+                        cl.set_settings({})
+                        cl.set_uuids(old_session["uuids"])
+
+                        # Attempt login again
+                        cl.login(USERNAME, PASSWORD)
+                        login_via_session = True
+                except Exception as e:
+                    logger.info("Couldn't login user using session information: %s" % e)
+            except:
+                pass
+            
+            if not login_via_session:
+                try:
+                    logger.info("Attempting to login via username and password. Username: %s" % USERNAME)
+                    if cl.login(USERNAME, PASSWORD):
+                        login_via_pw = True
+                        # Save the new session if login is successful
+                        cl.dump_settings(session_file)
+                except Exception as e:
+                    logger.info("Couldn't login user using username and password: %s" % e)
+            
+            if not login_via_pw and not login_via_session:
+                raise Exception("Couldn't login user with either password or session")
+
+
+
+        # def login_user(USERNAME, PASSWORD,logger, cl):
+        #     """
+        #     Attempts to login to Instagram using either the provided session information
+        #     or the provided username and password.
+        #     """
+
+        #     # cl = Client()
+        #     session = cl.load_settings("session.json")
+
+        #     login_via_session = False
+        #     login_via_pw = False
+
+        #     if session:
+        #         try:
+        #             cl.set_settings(session)
+        #             cl.login(USERNAME, PASSWORD)
+
+        #             # check if session is valid
+        #             try:
+        #                 cl.get_timeline_feed()
+        #             except LoginRequired:
+        #                 logger.info("Session is invalid, need to login via username and password")
+
+        #                 old_session = cl.get_settings()
+
+        #                 # use the same device uuids across logins
+        #                 cl.set_settings({})
+        #                 cl.set_uuids(old_session["uuids"])
+
+        #                 cl.login(USERNAME, PASSWORD)
+        #             login_via_session = True
+        #         except Exception as e:
+        #             logger.info("Couldn't login user using session information: %s" % e)
+
+        #     if not login_via_session:
+        #         try:
+        #             logger.info("Attempting to login via username and password. username: %s" % USERNAME)
+        #             if cl.login(USERNAME, PASSWORD):
+        #                 login_via_pw = True
+        #         except Exception as e:
+        #             logger.info("Couldn't login user using username and password: %s" % e)
+
+        #     if not login_via_pw and not login_via_session:
+        #         raise Exception("Couldn't login user with either password or session")
+
+
+
         try:
-            self.client.login(username, password)
+            # self.client.login(username, password)
+            login_user(username, password,self.logger, client)
             # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print("Login SUCCESSFUL")
