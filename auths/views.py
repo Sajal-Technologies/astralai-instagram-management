@@ -1762,7 +1762,7 @@ class InstagramBot:
         selected_proxy = random.choice(self.proxies)
 
         # Configure requests session with proxy
-        session = requests.Session()
+        # session = requests.Session()
     
         self.client = Client()
         before_ip = self.client._send_public_request("https://api.ipify.org/")
