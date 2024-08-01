@@ -1949,8 +1949,8 @@ class InstagramBot:
 
 
         try:
-            # self.client.login(username, password)
-            login_user(username, password,self.logger, client)
+            client.login(username, password)
+            # login_user(username, password,self.logger, self.client)
             # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print("Login SUCCESSFUL")
