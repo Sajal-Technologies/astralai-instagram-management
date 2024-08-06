@@ -2152,7 +2152,9 @@ class InstagramBotView(APIView):
         recipient_list = data.get('recipient_list')
         custom_message = data.get("custom_message")
 
-        proxies = read_proxies_from_file(r"rotating-proxies-astralai-https.txt")
+        # proxies = read_proxies_from_file(r"rotating-proxies-astralai-https.txt")
+
+        proxies = read_proxies_from_file(r"DataImpulse Proxy Sticky 30.txt")
 
 
         if not custom_message:
