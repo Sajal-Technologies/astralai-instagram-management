@@ -1758,19 +1758,6 @@ class InstagramBot:
                         sent=False
                     )
 
-
-        # Initialize Client with a random proxy
-        # selected_proxy = random.choice(self.proxies)
-
-        # Configure requests session with proxy
-        # session = requests.Session()
-        # before_ip = self.client._send_public_request("https://api.ipify.org/")
-        # print("Before Proxy",before_ip)
-
-        # self.client = Client(proxy = selected_proxy)
-        # self.client.delay_range = [1, 3]
-        # self.client.set_proxy(selected_proxy)
-        # time.sleep(5)
         after_ip = client._send_public_request("https://api.ipify.org/")
         print("After Proxy",after_ip)
 
@@ -1846,107 +1833,7 @@ class InstagramBot:
         self.logger.addHandler(stream_handler)
         # print("After Proxy",after_ip)
 
-        def login_user(USERNAME, PASSWORD, logger, cl):
-            """
-            Attempts to login to Instagram using either the provided session information
-            or the provided username and password.
-            """
-            session_file = "session.json"
-            
-            # Load existing session
-            # session = cl.load_settings(session_file)
-
-            login_via_session = False
-            login_via_pw = False
-
-            # if session:
-            try:
-                session = cl.load_settings(session_file)
-                try:
-                    cl.set_settings(session)
-                    cl.login(USERNAME, PASSWORD)
-
-                    # Check if session is still valid
-                    try:
-                        cl.get_timeline_feed()
-                        login_via_session = True
-                    except LoginRequired:
-                        logger.info("Session is invalid, need to login via username and password")
-
-                        # Refresh device UUIDs
-                        old_session = cl.get_settings()
-                        cl.set_settings({})
-                        cl.set_uuids(old_session["uuids"])
-
-                        # Attempt login again
-                        cl.login(USERNAME, PASSWORD)
-                        login_via_session = True
-                except Exception as e:
-                    logger.info("Couldn't login user using session information: %s" % e)
-            except:
-                pass
-            
-            if not login_via_session:
-                try:
-                    logger.info("Attempting to login via username and password. Username: %s" % USERNAME)
-                    if cl.login(USERNAME, PASSWORD):
-                        login_via_pw = True
-                        # Save the new session if login is successful
-                        cl.dump_settings(session_file)
-                except Exception as e:
-                    logger.info("Couldn't login user using username and password: %s" % e)
-            
-            if not login_via_pw and not login_via_session:
-                raise Exception("Couldn't login user with either password or session")
-
-
-
-        # def login_user(USERNAME, PASSWORD,logger, cl):
-        #     """
-        #     Attempts to login to Instagram using either the provided session information
-        #     or the provided username and password.
-        #     """
-
-        #     # cl = Client()
-        #     session = cl.load_settings("session.json")
-
-        #     login_via_session = False
-        #     login_via_pw = False
-
-        #     if session:
-        #         try:
-        #             cl.set_settings(session)
-        #             cl.login(USERNAME, PASSWORD)
-
-        #             # check if session is valid
-        #             try:
-        #                 cl.get_timeline_feed()
-        #             except LoginRequired:
-        #                 logger.info("Session is invalid, need to login via username and password")
-
-        #                 old_session = cl.get_settings()
-
-        #                 # use the same device uuids across logins
-        #                 cl.set_settings({})
-        #                 cl.set_uuids(old_session["uuids"])
-
-        #                 cl.login(USERNAME, PASSWORD)
-        #             login_via_session = True
-        #         except Exception as e:
-        #             logger.info("Couldn't login user using session information: %s" % e)
-
-        #     if not login_via_session:
-        #         try:
-        #             logger.info("Attempting to login via username and password. username: %s" % USERNAME)
-        #             if cl.login(USERNAME, PASSWORD):
-        #                 login_via_pw = True
-        #         except Exception as e:
-        #             logger.info("Couldn't login user using username and password: %s" % e)
-
-        #     if not login_via_pw and not login_via_session:
-        #         raise Exception("Couldn't login user with either password or session")
-
-
+        
 
         try:
             client.login(username, password)
@@ -2031,7 +1918,13 @@ class InstagramBot:
 
     def send_messages(self):
         print("HELLO from send message")
+        message_count = 0
         for recipient, message in zip(self.recipients, self.message[0]):
+            if message_count >= 10:
+                self.logout_and_wait()
+                self.relogin()
+                message_count = 0
+
             try:
                 user_id = self.client.user_id_from_username(recipient)
                 self.client.direct_send(message, [user_id])
@@ -2067,16 +1960,49 @@ class InstagramBot:
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 continue
             finally:
-                minute_ = random.randint(4, 7)
+                minute_ = random.randint(12, 25)
                 print(f"Sleeping for {minute_} minutes...")
                 time.sleep(minute_ * 60)
                 print("Awake now!")
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                message_count += 1
 
         self.task.status = 'completed'
         self.task.save()
         logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
         self.logout()
+    
+    def logout_and_wait(self):
+        try:
+            self.client.logout()
+            logging.info("Logged out successfully!")
+            time.sleep(random.randint(10, 22) * 60)  # Wait for a random duration between 10 to 22 minutes
+        except ClientError as e:
+            logging.error(f"An error occurred during logout: {e}")
+
+    def relogin(self):
+        selected_proxy = random.choice(self.proxies)
+        self.client = Client(proxy=selected_proxy)
+        self.login_user()  # Re-login using the new client instance with proxy
+
+    def login_user(self):
+        try:
+            self.client.login(self.username, self.password)
+            logging.info("Login SUCCESSFUL")
+        except ClientLoginRequired as e:
+            logging.error(f"Login required: {e}")
+            self.task.error_message = "Login required"
+            self.task.save()
+            raise e
+        except ClientError as e:
+            logging.error(f"Client error: {e}")
+            self.task.error_message = f"Client error: {e}"
+            self.task.save()
+            raise e
+
+        self.task.status = 'in_progress'
+        self.task.save()
+        self.send_messages()
 
     def logout(self):
         try:
