@@ -1922,11 +1922,14 @@ class InstagramBot:
         recipient_index = 0
 
         while recipient_index < len(self.recipients):
+            print("This is the recipient list :",self.recipients)
+            print("This is the Recipient Index :",recipient_index)
+            print("This is the Message Count :",message_count)
             recipient = self.recipients[recipient_index]
             message = self.message[0][recipient_index]
 
         # for recipient, message in zip(self.recipients, self.message[0]):
-            if message_count >= random.randint(8,12): # 8-12 message as random random.int(8-13)
+            if message_count >= random.randint(5,7): # 8-12 message as random random.int(8-13)
                 self.logout_and_wait()
                 # self.relogin()
                 message_count = 0
@@ -1964,9 +1967,9 @@ class InstagramBot:
                 self.task.failed_messages += 1
                 self.task.save()
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
-                continue
+                # continue
             finally:
-                minute_ = random.randint(12, 25)
+                minute_ = random.randint(3, 7)
                 print(f"Sleeping for {minute_} minutes...")
                 time.sleep(minute_ * 60)
                 print("Awake now!")
@@ -1984,7 +1987,9 @@ class InstagramBot:
         try:
             # self.client.logout()
             logging.info("Logged out successfully!")
-            time.sleep(random.randint(60, 145) * 60)  # Wait for a random duration between 10 to 22 minutes
+            rest_time = random.randint(60, 90) * 60
+            print(f"The script will rest for {str(rest_time)}")
+            time.sleep(rest_time)  # Wait for a random duration between 10 to 22 minutes
         except ClientError as e:
             logging.error(f"An error occurred during logout: {e}")
 
