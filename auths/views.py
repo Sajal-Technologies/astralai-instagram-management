@@ -1927,56 +1927,68 @@ class InstagramBot:
             print("This is the Message Count :",message_count)
             recipient = self.recipients[recipient_index]
             message = self.message[0][recipient_index]
-
-        # for recipient, message in zip(self.recipients, self.message[0]):
-            if message_count >= random.randint(5,7): # 8-12 message as random random.int(8-13)
-                self.logout_and_wait()
-                # self.relogin()
-                message_count = 0
-
             try:
-                user_id = self.client.user_id_from_username(recipient)
-                self.client.direct_send(message, [user_id])
-                print(f"Message sent to {recipient}")
-                mess = Message.objects.create(
-                    instagram_account=self.instagram_account,
-                    recipient=recipient,
-                    content=message,
-                    scheduled_time=timezone.now(),
-                    sent=True,
-                    sent_time=timezone.now()
-                )
-                self.task.sent_messages += 1
-                self.task.message.add(mess)
-                self.task.save()
-                time.sleep(2)  # Add delay to avoid rate limits
-                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
-            except ClientError as e:
-                print(f"Error sending message to {recipient}: {e}")
-                logging.error(f"Error sending message to {recipient}: {e}")
-                mess = Message.objects.create(
-                    instagram_account=self.instagram_account,
-                    recipient=recipient,
-                    content=message,
-                    scheduled_time=timezone.now(),
-                    sent=False,
-                    sent_time=timezone.now(),
-                    error=f"Error sending message to {recipient}: {e}"
-                )
-                self.task.message.add(mess)
-                self.task.failed_messages += 1
-                self.task.save()
-                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
-                # continue
-            finally:
-                minute_ = random.randint(3, 7)
-                print(f"Sleeping for {minute_} minutes...")
-                time.sleep(minute_ * 60)
-                print("Awake now!")
-                logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
-                message_count += 1
-            
-            recipient_index += 1  # Move to the next recipient
+
+            # for recipient, message in zip(self.recipients, self.message[0]):
+                if message_count >= random.randint(10,14): # 8-12 message as random random.int(8-13)
+                    self.logout_and_wait()
+                    # self.relogin()
+                    message_count = 0
+
+                try:
+                    user_id = self.client.user_id_from_username(recipient)
+                    self.client.direct_send(message, [user_id])
+                    print(f"Message sent to {recipient}")
+                    mess = Message.objects.create(
+                        instagram_account=self.instagram_account,
+                        recipient=recipient,
+                        content=message,
+                        scheduled_time=timezone.now(),
+                        sent=True,
+                        sent_time=timezone.now()
+                    )
+                    self.task.sent_messages += 1
+                    self.task.message.add(mess)
+                    self.task.save()
+                    time.sleep(2)  # Add delay to avoid rate limits
+                    logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                except ClientError as e:
+                    print(f"Error sending message to {recipient}: {e}")
+                    logging.error(f"Error sending message to {recipient}: {e}")
+                    mess = Message.objects.create(
+                        instagram_account=self.instagram_account,
+                        recipient=recipient,
+                        content=message,
+                        scheduled_time=timezone.now(),
+                        sent=False,
+                        sent_time=timezone.now(),
+                        error=f"Error sending message to {recipient}: {e}"
+                    )
+                    self.task.message.add(mess)
+                    self.task.failed_messages += 1
+                    self.task.save()
+                    logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                    # continue
+                finally:
+                    minute_ = random.randint(3, 7)
+                    print(f"Sleeping for {minute_} minutes...")
+                    time.sleep(minute_ * 60)
+                    print("Awake now!")
+                    logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                    message_count += 1
+                
+                recipient_index += 1  # Move to the next recipient
+            except Exception as e:
+                    logging.error(f"Error: There is some issue: {str(e)}")
+                    if "429" in str(e):
+                        # Rate-limiting (429) error
+                        print("429 Too Many Requests: Relogging in with a new proxy...")
+                        logging.error(f"429 Too Many Requests: {e}")
+                        logging.error("before IP CHANGE",self.client._send_public_request("https://api.ipify.org/"))
+                        self.relogin()
+                        time.sleep(random.randint(60, 120))
+                        logging.error("After IP CHANGE",self.client._send_public_request("https://api.ipify.org/"))
+                        continue  # Retry with the next recipient
 
         self.task.status = 'completed'
         self.task.save()
@@ -1996,7 +2008,7 @@ class InstagramBot:
     def relogin(self):
         selected_proxy = random.choice(self.proxies)
         self.client = Client(proxy=selected_proxy)
-        self.login_user()  # Re-login using the new client instance with proxy
+        # self.login_user()  # Re-login using the new client instance with proxy
 
     def login_user(self):
         try:
