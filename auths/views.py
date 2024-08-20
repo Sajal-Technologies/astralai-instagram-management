@@ -1724,6 +1724,11 @@ from .models import instagram_accounts, Message, Task, MessageTemplate
 from django.utils import timezone
 import os, requests
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+
+# Create a global ThreadPoolExecutor to handle all concurrent tasks
+global_executor = ThreadPoolExecutor(max_workers=10) 
 
 def read_proxies_from_file(filename):
     with open(filename, 'r') as f:
@@ -2006,9 +2011,81 @@ class InstagramBot:
             logging.error(f"An error occurred during logout: {e}")
 
     def relogin(self):
+
         selected_proxy = random.choice(self.proxies)
         self.client = Client(proxy=selected_proxy)
+
+        def challenge_code_handler(username, choice):
+            if choice == ChallengeChoice.EMAIL:
+                print("inside challange choice: ",self.client._send_public_request("https://api.ipify.org/"))
+                return get_code_from_email(username)
+            return False
+
+        def get_code_from_email(username):
+            mail = imaplib.IMAP4_SSL("imap.hostinger.com")
+            print("Logging in to Mail")
+            print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
+            mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+            print("inside challange After login: ",self.client._send_public_request("https://api.ipify.org/"))
+            print("Logged in to Mail")
+            mail.select("inbox")
+            print("Selected Inbox")
+            result, data = mail.search(None, "(UNSEEN)")
+            print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            ids = data.pop().split()
+            for num in reversed(ids):
+                mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+                result, data = mail.fetch(num, "(RFC822)")
+                assert result == "OK", "Error2 during get_code_from_email: %s" % result
+                msg = email.message_from_string(data[0][1].decode())
+                payloads = msg.get_payload()
+                if not isinstance(payloads, list):
+                    payloads = [msg]
+                code = None
+                        
+                for payload in payloads:
+                    body = payload.get_payload(decode=True).decode()
+                    body = unescape(body)  # Decode HTML entities
+                    body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+                    if "<div" not in body:
+                        continue
+                    print("FOUND BODY WITH DIV IN MAIL")
+                    match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+                    if not match:
+                        match = re.search(f">{username}[^<]*?<", body)
+                        if not match:
+                            username_pattern = f"Hi,\\s*{username},"
+                            match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+                            if not match:
+                                print("MATCH NOT FOUND")
+                                continue
+                    print("Match from email found")
+                    match = re.search(r">(\d{6})<", body)
+                    if not match:
+                        match = re.search(r'\b\d{6}\b', body)
+                        if not match:
+                            print('Skip this email, "code" not found')
+                            continue
+                    code = match.group(1)
+                    if code:
+                        return code
+            return False
+
+
+        self.client.challenge_code_handler = challenge_code_handler
+
+        self.logger = logging.getLogger(f"SingleInstagramBot-{self.username}")
+        self.logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        self.logger.addHandler(stream_handler)
+
+
+        self.client.login(self.username, self.password)# Re-login using the new client instance with proxy
         # self.login_user()  # Re-login using the new client instance with proxy
+        print("Login SUCCESSFUL")
 
     def login_user(self):
         try:
@@ -2038,6 +2115,8 @@ class InstagramBot:
             logging.error(f"An error occurred during logout: {e}")
 
 def send_messages(account):
+    thread_name = threading.current_thread().name
+    print(f"Thread {thread_name} is sending messages for account {account['username']}")
     print("Before Getting all variable")
     username = account['username']
     password = account['password']
@@ -2053,13 +2132,15 @@ def send_messages(account):
 
     try:
         instagram_bot = InstagramBot(username, password, recipients, message, instagram_account, task,proxies,client)
-        return f"Messages sent from {username} to {recipients}"
+        # return f"Messages sent from {username} to {recipients}"
+        return f"Messages sent from {username} to {recipients} by {thread_name}"
     except Exception as e:
         logging.error(f"An error occurred with account {username}: {e}")
         task.status = 'failed'
         task.error_message = str(e)
         task.save()
-        return f"Failed to send messages from {username}"
+        # return f"Failed to send messages from {username}"
+        return f"Failed to send messages from {username} by {thread_name}"
 
 class InstagramBotView(APIView):
 
@@ -2093,8 +2174,10 @@ class InstagramBotView(APIView):
         task = Task.objects.create(instagram_account=ins, total_messages=total_messages)
         response_data = {'task_id': task.id}
 
-        executor = ThreadPoolExecutor(max_workers=1)
-        executor.submit(self.process_messages, request.data, ins, task)
+        # executor = ThreadPoolExecutor(max_workers=1)
+        # executor.submit(self.process_messages, request.data, ins, task)
+
+        global_executor.submit(self.process_messages, request.data, ins, task)
 
         return JsonResponse(response_data)
 
@@ -2150,12 +2233,17 @@ class InstagramBotView(APIView):
             {'username': username, 'password': password, 'recipients': recipient_list, 'message': messages, 'instagram_account': instagram_account, 'task': task, 'proxies': proxies},
         ]
 
-        max_simultaneous_logins = 5
-        results = []
-        with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
-            futures = [executor.submit(send_messages, account) for account in accounts]
-            for future in as_completed(futures):
-                results.append(future.result())
+        # max_simultaneous_logins = 5
+        # results = []
+        # with ThreadPoolExecutor(max_workers=max_simultaneous_logins) as executor:
+        #     futures = [executor.submit(send_messages, account) for account in accounts]
+        #     for future in as_completed(futures):
+        #         results.append(future.result())
+
+        # Submit the task to the global executor for parallel processing
+        futures = [global_executor.submit(send_messages, account) for account in accounts]
+        for future in as_completed(futures):
+            future.result()  # Ensure all futures are completed
 
         task.status = 'completed'
         task.save()
