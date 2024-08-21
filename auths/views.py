@@ -1943,7 +1943,7 @@ class InstagramBot:
                 try:
                     user_id = self.client.user_id_from_username(recipient)
                     self.client.direct_send(message, [user_id])
-                    print(f"Message sent to {recipient}")
+                    print(f"Message sent from {self.username} to {recipient}")
                     mess = Message.objects.create(
                         instagram_account=self.instagram_account,
                         recipient=recipient,
@@ -1958,8 +1958,8 @@ class InstagramBot:
                     time.sleep(2)  # Add delay to avoid rate limits
                     logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 except ClientError as e:
-                    print(f"Error sending message to {recipient}: {e}")
-                    logging.error(f"Error sending message to {recipient}: {e}")
+                    print(f"Error sending message from {self.username} to {recipient}: {e}")
+                    logging.error(f"Error sending message from {self.username} to {recipient}: {e}")
                     mess = Message.objects.create(
                         instagram_account=self.instagram_account,
                         recipient=recipient,
@@ -1967,7 +1967,7 @@ class InstagramBot:
                         scheduled_time=timezone.now(),
                         sent=False,
                         sent_time=timezone.now(),
-                        error=f"Error sending message to {recipient}: {e}"
+                        error=f"Error sending message from {self.username} to {recipient}: {e}"
                     )
                     self.task.message.add(mess)
                     self.task.failed_messages += 1
@@ -1984,11 +1984,11 @@ class InstagramBot:
                 
                 recipient_index += 1  # Move to the next recipient
             except Exception as e:
-                    logging.error(f"Error: There is some issue: {str(e)}")
+                    logging.error(f"Error: There is some issue for username{str(self.username)}: {str(e)}")
                     if "429" in str(e):
                         # Rate-limiting (429) error
-                        print("429 Too Many Requests: Relogging in with a new proxy...")
-                        logging.error(f"429 Too Many Requests: {e}")
+                        print(f"429 Too Many Requests: Relogging in with a new proxy.... for username{str(self.username)}")
+                        logging.error(f"429 Too Many Requests for username{str(self.username)}: {e}")
                         logging.error("before IP CHANGE",self.client._send_public_request("https://api.ipify.org/"))
                         self.relogin()
                         time.sleep(random.randint(60, 120))
@@ -2005,7 +2005,7 @@ class InstagramBot:
             # self.client.logout()
             logging.info("Logged out successfully!")
             rest_time = random.randint(60, 90) * 60
-            print(f"The script will rest for {str(rest_time)}")
+            print(f"The script will rest for {str(rest_time/60)} in Minutes")
             time.sleep(rest_time)  # Wait for a random duration between 10 to 22 minutes
         except ClientError as e:
             logging.error(f"An error occurred during logout: {e}")
@@ -2085,7 +2085,7 @@ class InstagramBot:
 
         self.client.login(self.username, self.password)# Re-login using the new client instance with proxy
         # self.login_user()  # Re-login using the new client instance with proxy
-        print("Login SUCCESSFUL")
+        print("ReLogin SUCCESSFUL")
 
     def login_user(self):
         try:
