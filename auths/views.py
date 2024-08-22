@@ -1784,6 +1784,32 @@ class InstagramBot:
             print("Logged in to Mail")
             mail.select("inbox")
             print("Selected Inbox")
+
+            result, data = mail.search(None, "(SEEN)")
+            print("DATA for deletion --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            
+            if not data[0]:
+                print("No seen messages found in inbox.")
+
+            if data[0]:  # If there are seen messages
+                seen_msg_ids = data[0].split()
+                print(f"Found seen messages: {seen_msg_ids}")
+                for num in seen_msg_ids:
+                    result = mail.store(num, '+FLAGS', '\\Deleted')
+                    if result[0] != 'OK':
+                        print(f"Failed to mark message {num} for deletion.")
+                    else:
+                        print(f"Marked message {num} for deletion.")
+                mail.expunge()
+                print("Deleted all seen messages")
+            else:
+                print("unable to find mail to delete")
+
+            # Step 2: Wait for the email to appear
+            print("Waiting for the email...")
+            time.sleep(5)
+
             result, data = mail.search(None, "(UNSEEN)")
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
             assert result == "OK", "Error1 during get_code_from_email: %s" % result
@@ -1890,29 +1916,35 @@ class InstagramBot:
                 # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 print(f"Client error: {e}")
-
-                mess.sent=False
-                mess.sent_time=timezone.now()
-                mess.error = str(e)
-                mess.save()
-
-                # mess = Message.objects.create(
-                #         instagram_account=self.instagram_account,
-                #         recipient=recipients,
-                #         content=message[0],
-                #         scheduled_time=timezone.now(),
-                #         sent=False,
-                #         sent_time=timezone.now()
-                #     )
                 logging.error(f"Client error for {self.username}: {e}")
-                # self.task.message = mess
-                self.task.failed_messages = len(recipients)
-                self.task.message.add(mess)
-                self.task.error_message = f"Client error: {e}"
-                self.task.status = "Failed"
-                self.task.save()
-                # return
-                raise e  # Stop execution by raising the exception
+                logging.error(f"Will try to relogin")
+                try:
+                    self.relogin()
+                    logging.error(f"Relogin Done")
+                except Exception as e:
+                    logging.error(f"Relogin Fail")
+                    mess.sent=False
+                    mess.sent_time=timezone.now()
+                    mess.error = str(e)
+                    mess.save()
+
+                    # mess = Message.objects.create(
+                    #         instagram_account=self.instagram_account,
+                    #         recipient=recipients,
+                    #         content=message[0],
+                    #         scheduled_time=timezone.now(),
+                    #         sent=False,
+                    #         sent_time=timezone.now()
+                    #     )
+                    logging.error(f"Client error for {self.username}: {e}")
+                    # self.task.message = mess
+                    self.task.failed_messages = len(recipients)
+                    self.task.message.add(mess)
+                    self.task.error_message = f"Client error: {e}"
+                    self.task.status = "Failed"
+                    self.task.save()
+                    # return
+                    raise e  # Stop execution by raising the exception
         # logging.info(get_proxy_ip(selected_proxy)) #NEWCODE
         logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
         
@@ -2030,6 +2062,37 @@ class InstagramBot:
             print("Logged in to Mail")
             mail.select("inbox")
             print("Selected Inbox")
+
+            # # Step 1: Delete all seen messages
+            # result, data = mail.search(None, "(SEEN)")
+            # assert result == "OK", "Error while searching for seen messages: %s" % result
+
+            result, data = mail.search(None, "(SEEN)")
+            print("DATA for deletion --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            
+            if not data[0]:
+                print("No seen messages found in inbox.")
+
+            if data[0]:  # If there are seen messages
+                seen_msg_ids = data[0].split()
+                print(f"Found seen messages: {seen_msg_ids}")
+                for num in seen_msg_ids:
+                    result = mail.store(num, '+FLAGS', '\\Deleted')
+                    if result[0] != 'OK':
+                        print(f"Failed to mark message {num} for deletion.")
+                    else:
+                        print(f"Marked message {num} for deletion.")
+                mail.expunge()
+                print("Deleted all seen messages")
+            else:
+                print("unable to find mail to delete")
+
+            # Step 2: Wait for the email to appear
+            print("Waiting for the email...")
+            time.sleep(5)
+
+
             result, data = mail.search(None, "(UNSEEN)")
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
             assert result == "OK", "Error1 during get_code_from_email: %s" % result
@@ -2068,6 +2131,7 @@ class InstagramBot:
                             print('Skip this email, "code" not found')
                             continue
                     code = match.group(1)
+                    print(match.group(1))
                     if code:
                         return code
             return False
