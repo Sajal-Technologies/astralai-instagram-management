@@ -1849,6 +1849,13 @@ class InstagramBot:
                             continue
                     code = match.group(1)
                     if code:
+                        if data[0]:  # Recheck if there are seen messages to delete
+                            for num in seen_msg_ids:
+                                mail.store(num, '+FLAGS', '\\Deleted')
+                            mail.expunge()
+                            print("Deleted all seen messages after retrieving code")
+                        else:
+                            print("No code found, skipping deletion of seen messages")
                         return code
             return False
         # =====================================================================Challenge Handler code ====================================
