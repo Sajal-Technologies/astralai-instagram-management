@@ -1869,19 +1869,16 @@ class InstagramBot:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
-        # print("After Proxy",after_ip)
+        
 
         
 
         try:
             client.login(username, password)
-            # login_user(username, password,self.logger, self.client)
-            # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print("Login SUCCESSFUL")
             mess.delete()
         except ClientLoginRequired as e:
-            # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
             logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
             print(f"Login required: {e}")
             logging.error(f"Login required for {self.username}: {e}")
@@ -1896,7 +1893,6 @@ class InstagramBot:
             raise e  # Stop execution by raising the exception
         except ClientError as e:
             if 'challenge_required' in str(e):
-                # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 logging.error(f"challenge required error for {self.username}: {e}")
 
@@ -1904,15 +1900,6 @@ class InstagramBot:
                 mess.sent_time=timezone.now()
                 mess.error = str(e)
                 mess.save()
-
-                # mess = Message.objects.create(
-                #         instagram_account=self.instagram_account,
-                #         recipient=recipients,
-                #         content=message[0],
-                #         scheduled_time=timezone.now(),
-                #         sent=False,
-                #         sent_time=timezone.now()
-                #     )
                 self.task.message.add(mess)
                 self.task.failed_messages = len(recipients)
                 self.task.status = 'failed'
@@ -1920,7 +1907,6 @@ class InstagramBot:
                 self.task.save()
                 raise e  # Stop execution by raising the exception
             else:
-                # logging.error(get_proxy_ip(selected_proxy)) #NEWCODE
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 print(f"Client error: {e}")
                 logging.error(f"Client error for {self.username}: {e}")
@@ -1934,17 +1920,7 @@ class InstagramBot:
                     mess.sent_time=timezone.now()
                     mess.error = str(e)
                     mess.save()
-
-                    # mess = Message.objects.create(
-                    #         instagram_account=self.instagram_account,
-                    #         recipient=recipients,
-                    #         content=message[0],
-                    #         scheduled_time=timezone.now(),
-                    #         sent=False,
-                    #         sent_time=timezone.now()
-                    #     )
                     logging.error(f"Client error for {self.username}: {e}")
-                    # self.task.message = mess
                     self.task.failed_messages = len(recipients)
                     self.task.message.add(mess)
                     self.task.error_message = f"Client error: {e}"
@@ -1952,7 +1928,7 @@ class InstagramBot:
                     self.task.save()
                     # return
                     raise e  # Stop execution by raising the exception
-        # logging.info(get_proxy_ip(selected_proxy)) #NEWCODE
+        
         logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
         
         self.task.status = 'in_progress'
@@ -2069,10 +2045,6 @@ class InstagramBot:
             print("Logged in to Mail")
             mail.select("inbox")
             print("Selected Inbox")
-
-            # # Step 1: Delete all seen messages
-            # result, data = mail.search(None, "(SEEN)")
-            # assert result == "OK", "Error while searching for seen messages: %s" % result
 
             result, data = mail.search(None, "(SEEN)")
             print("DATA for deletion --> " + str(data) + " AND RESULT IS " + str(result))
