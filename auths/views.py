@@ -2302,7 +2302,7 @@ class InstagramBot:
 
             # Step 2: Wait for the email to appear
             print("Waiting for the email...")
-            time.sleep(5)
+            time.sleep(10)
 
             result, data = mail.search(None, "(UNSEEN)")
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
