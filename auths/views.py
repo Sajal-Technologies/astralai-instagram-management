@@ -1775,12 +1775,102 @@ class InstagramBot:
                 return get_code_from_email(username)
             return False
 
+        # def get_code_from_email(username):
+        #     mail = imaplib.IMAP4_SSL("imap.hostinger.com")
+        #     print("Logging in to Mail")
+        #     print("inside challange Before login: ",client._send_public_request("https://api.ipify.org/"))
+        #     mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+        #     print("inside challange After login: ",client._send_public_request("https://api.ipify.org/"))
+        #     print("Logged in to Mail")
+        #     mail.select("inbox")
+        #     print("Selected Inbox")
+
+        #     result, data = mail.search(None, "(SEEN)")
+        #     print("DATA for deletion --> " + str(data) + " AND RESULT IS " + str(result))
+        #     assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            
+        #     if not data[0]:
+        #         print("No seen messages found in inbox.")
+
+        #     if data[0]:  # If there are seen messages
+        #         seen_msg_ids = data[0].split()
+        #         print(f"Found seen messages: {seen_msg_ids}")
+        #         for num in seen_msg_ids:
+        #             result = mail.store(num, '+FLAGS', '\\Deleted')
+        #             if result[0] != 'OK':
+        #                 print(f"Failed to mark message {num} for deletion.")
+        #             else:
+        #                 print(f"Marked message {num} for deletion.")
+        #         mail.expunge()
+        #         print("Deleted all seen messages")
+        #     else:
+        #         print("unable to find mail to delete")
+
+        #     # Step 2: Wait for the email to appear
+        #     print("Waiting for the email...")
+        #     time.sleep(5)
+
+        #     result, data = mail.search(None, "(UNSEEN)")
+        #     print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
+        #     assert result == "OK", "Error1 during get_code_from_email: %s" % result
+        #     ids = data.pop().split()
+        #     for num in reversed(ids):
+        #         mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+        #         result, data = mail.fetch(num, "(RFC822)")
+        #         assert result == "OK", "Error2 during get_code_from_email: %s" % result
+        #         msg = email.message_from_string(data[0][1].decode())
+        #         payloads = msg.get_payload()
+        #         if not isinstance(payloads, list):
+        #             payloads = [msg]
+        #         code = None
+                        
+        #         for payload in payloads:
+        #             body = payload.get_payload(decode=True).decode()
+        #             body = unescape(body)  # Decode HTML entities
+        #             body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+        #             if "<div" not in body:
+        #                 continue
+        #             print("FOUND BODY WITH DIV IN MAIL")
+        #             match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+        #             if not match:
+        #                 match = re.search(f">{username}[^<]*?<", body)
+        #                 if not match:
+        #                     username_pattern = f"Hi,\\s*{username},"
+        #                     match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+        #                     if not match:
+        #                         print("MATCH NOT FOUND")
+        #                         continue
+        #             print("Match from email found")
+        #             match = re.search(r">(\d{6})<", body)
+        #             if not match:
+        #                 match = re.search(r'\b\d{6}\b', body)
+        #                 if not match:
+        #                     print('Skip this email, "code" not found')
+        #                     continue
+        #             code = match.group(1)
+        #             if code:
+        #                 if data[0]:  # Recheck if there are seen messages to delete
+        #                     for num in seen_msg_ids:
+        #                         mail.store(num, '+FLAGS', '\\Deleted')
+        #                     mail.expunge()
+        #                     print("Deleted all seen messages after retrieving code")
+        #                 else:
+        #                     print("No code found, skipping deletion of seen messages")
+        #                 return code
+        #     return False
+
         def get_code_from_email(username):
+            # from html import unescape
+            import imaplib
+            import time
+            import email
+            from html import unescape
+            import re
             mail = imaplib.IMAP4_SSL("imap.hostinger.com")
             print("Logging in to Mail")
-            print("inside challange Before login: ",client._send_public_request("https://api.ipify.org/"))
+            print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
             mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
-            print("inside challange After login: ",client._send_public_request("https://api.ipify.org/"))
+            print("inside challange After login: ",self.client._send_public_request("https://api.ipify.org/"))
             print("Logged in to Mail")
             mail.select("inbox")
             print("Selected Inbox")
@@ -1805,6 +1895,35 @@ class InstagramBot:
                 print("Deleted all seen messages")
             else:
                 print("unable to find mail to delete")
+
+            #======================== Delete New Insta login Message =====================================================================
+
+            # Search for emails containing the specific text
+            search_text = "We've noticed a new login"  # Part of the text you want to search for
+            result, data = mail.search(None, f'(BODY "{search_text}")')
+            
+            print("DATA for deletion based on content --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error during content-based search: %s" % result
+            
+            if not data[0]:
+                print("No messages found containing the specific content.")
+            
+            if data[0]:  # If there are messages matching the content
+                content_msg_ids = data[0].split()
+                print(f"Found messages with specific content: {content_msg_ids}")
+                for num in content_msg_ids:
+                    result = mail.store(num, '+FLAGS', '\\Deleted')
+                    if result[0] != 'OK':
+                        print(f"Failed to mark message {num} for deletion.")
+                    else:
+                        print(f"Marked message {num} for deletion.")
+                mail.expunge()
+                print("Deleted all messages with specific content")
+            else:
+                print("Unable to find mails with the specified content to delete.")
+
+            #======================== Delete New Insta login Message =====================================================================
+
 
             # Step 2: Wait for the email to appear
             print("Waiting for the email...")
@@ -2036,7 +2155,92 @@ class InstagramBot:
                 return get_code_from_email(username)
             return False
 
+        # def get_code_from_email(username):
+        #     mail = imaplib.IMAP4_SSL("imap.hostinger.com")
+        #     print("Logging in to Mail")
+        #     print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
+        #     mail.login(CHALLENGE_EMAIL, CHALLENGE_PASSWORD)
+        #     print("inside challange After login: ",self.client._send_public_request("https://api.ipify.org/"))
+        #     print("Logged in to Mail")
+        #     mail.select("inbox")
+        #     print("Selected Inbox")
+
+        #     result, data = mail.search(None, "(SEEN)")
+        #     print("DATA for deletion --> " + str(data) + " AND RESULT IS " + str(result))
+        #     assert result == "OK", "Error1 during get_code_from_email: %s" % result
+            
+        #     if not data[0]:
+        #         print("No seen messages found in inbox.")
+
+        #     if data[0]:  # If there are seen messages
+        #         seen_msg_ids = data[0].split()
+        #         print(f"Found seen messages: {seen_msg_ids}")
+        #         for num in seen_msg_ids:
+        #             result = mail.store(num, '+FLAGS', '\\Deleted')
+        #             if result[0] != 'OK':
+        #                 print(f"Failed to mark message {num} for deletion.")
+        #             else:
+        #                 print(f"Marked message {num} for deletion.")
+        #         mail.expunge()
+        #         print("Deleted all seen messages")
+        #     else:
+        #         print("unable to find mail to delete")
+
+        #     # Step 2: Wait for the email to appear
+        #     print("Waiting for the email...")
+        #     time.sleep(5)
+
+
+        #     result, data = mail.search(None, "(UNSEEN)")
+        #     print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
+        #     assert result == "OK", "Error1 during get_code_from_email: %s" % result
+        #     ids = data.pop().split()
+        #     for num in reversed(ids):
+        #         mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+        #         result, data = mail.fetch(num, "(RFC822)")
+        #         assert result == "OK", "Error2 during get_code_from_email: %s" % result
+        #         msg = email.message_from_string(data[0][1].decode())
+        #         payloads = msg.get_payload()
+        #         if not isinstance(payloads, list):
+        #             payloads = [msg]
+        #         code = None
+                        
+        #         for payload in payloads:
+        #             body = payload.get_payload(decode=True).decode()
+        #             body = unescape(body)  # Decode HTML entities
+        #             body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+        #             if "<div" not in body:
+        #                 continue
+        #             print("FOUND BODY WITH DIV IN MAIL")
+        #             match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+        #             if not match:
+        #                 match = re.search(f">{username}[^<]*?<", body)
+        #                 if not match:
+        #                     username_pattern = f"Hi,\\s*{username},"
+        #                     match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+        #                     if not match:
+        #                         print("MATCH NOT FOUND")
+        #                         continue
+        #             print("Match from email found")
+        #             match = re.search(r">(\d{6})<", body)
+        #             if not match:
+        #                 match = re.search(r'\b\d{6}\b', body)
+        #                 if not match:
+        #                     print('Skip this email, "code" not found')
+        #                     continue
+        #             code = match.group(1)
+        #             print(match.group(1))
+        #             if code:
+        #                 return code
+        #     return False
+
         def get_code_from_email(username):
+            # from html import unescape
+            import imaplib
+            import time
+            import email
+            from html import unescape
+            import re
             mail = imaplib.IMAP4_SSL("imap.hostinger.com")
             print("Logging in to Mail")
             print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
@@ -2067,10 +2271,38 @@ class InstagramBot:
             else:
                 print("unable to find mail to delete")
 
+            #======================== Delete New Insta login Message =====================================================================
+
+            # Search for emails containing the specific text
+            search_text = "We've noticed a new login"  # Part of the text you want to search for
+            result, data = mail.search(None, f'(BODY "{search_text}")')
+            
+            print("DATA for deletion based on content --> " + str(data) + " AND RESULT IS " + str(result))
+            assert result == "OK", "Error during content-based search: %s" % result
+            
+            if not data[0]:
+                print("No messages found containing the specific content.")
+            
+            if data[0]:  # If there are messages matching the content
+                content_msg_ids = data[0].split()
+                print(f"Found messages with specific content: {content_msg_ids}")
+                for num in content_msg_ids:
+                    result = mail.store(num, '+FLAGS', '\\Deleted')
+                    if result[0] != 'OK':
+                        print(f"Failed to mark message {num} for deletion.")
+                    else:
+                        print(f"Marked message {num} for deletion.")
+                mail.expunge()
+                print("Deleted all messages with specific content")
+            else:
+                print("Unable to find mails with the specified content to delete.")
+
+            #======================== Delete New Insta login Message =====================================================================
+
+
             # Step 2: Wait for the email to appear
             print("Waiting for the email...")
             time.sleep(5)
-
 
             result, data = mail.search(None, "(UNSEEN)")
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
@@ -2110,8 +2342,14 @@ class InstagramBot:
                             print('Skip this email, "code" not found')
                             continue
                     code = match.group(1)
-                    print(match.group(1))
                     if code:
+                        if data[0]:  # Recheck if there are seen messages to delete
+                            for num in seen_msg_ids:
+                                mail.store(num, '+FLAGS', '\\Deleted')
+                            mail.expunge()
+                            print("Deleted all seen messages after retrieving code")
+                        else:
+                            print("No code found, skipping deletion of seen messages")
                         return code
             return False
 
