@@ -2236,11 +2236,11 @@ class InstagramBot:
 
         def get_code_from_email(username):
             # from html import unescape
-            import imaplib
-            import time
-            import email
-            from html import unescape
-            import re
+            # import imaplib
+            # import time
+            # import email
+            # from html import unescape
+            # import re
             mail = imaplib.IMAP4_SSL("imap.hostinger.com")
             print("Logging in to Mail")
             print("inside challange Before login: ",self.client._send_public_request("https://api.ipify.org/"))
