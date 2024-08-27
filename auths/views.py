@@ -1933,49 +1933,103 @@ class InstagramBot:
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
             assert result == "OK", "Error1 during get_code_from_email: %s" % result
             ids = data.pop().split()
+            
+            # for num in reversed(ids):
+            #     mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+            #     result, data = mail.fetch(num, "(RFC822)")
+            #     assert result == "OK", "Error2 during get_code_from_email: %s" % result
+            #     msg = email.message_from_string(data[0][1].decode())
+            #     payloads = msg.get_payload()
+            #     if not isinstance(payloads, list):
+            #         payloads = [msg]
+            #     code = None
+                        
+            #     for payload in payloads:
+            #         body = payload.get_payload(decode=True).decode()
+            #         body = unescape(body)  # Decode HTML entities
+            #         body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+            #         if "<div" not in body:
+            #             continue
+            #         print("FOUND BODY WITH DIV IN MAIL")
+            #         match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+            #         if not match:
+            #             match = re.search(f">{username}[^<]*?<", body)
+            #             if not match:
+            #                 username_pattern = f"Hi,\\s*{username},"
+            #                 match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+            #                 if not match:
+            #                     print("MATCH NOT FOUND")
+            #                     continue
+            #         print("Match from email found")
+            #         match = re.search(r">(\d{6})<", body)
+            #         if not match:
+            #             match = re.search(r'\b\d{6}\b', body)
+            #             if not match:
+            #                 print('Skip this email, "code" not found')
+            #                 continue
+            #         code = match.group(1)
+            #         if code:
+            #             if data[0]:  # Recheck if there are seen messages to delete
+            #                 for num in seen_msg_ids:
+            #                     mail.store(num, '+FLAGS', '\\Deleted')
+            #                 mail.expunge()
+            #                 print("Deleted all seen messages after retrieving code")
+            #             else:
+            #                 print("No code found, skipping deletion of seen messages")
+            #             return code
+            # return False
+            codes_found = []
+
             for num in reversed(ids):
                 mail.store(num, "+FLAGS", "\\Seen")  # mark as read
                 result, data = mail.fetch(num, "(RFC822)")
-                assert result == "OK", "Error2 during get_code_from_email: %s" % result
+                assert result == "OK", "Error during get_code_from_email: %s" % result
                 msg = email.message_from_string(data[0][1].decode())
                 payloads = msg.get_payload()
                 if not isinstance(payloads, list):
                     payloads = [msg]
-                code = None
-                        
+
                 for payload in payloads:
                     body = payload.get_payload(decode=True).decode()
                     body = unescape(body)  # Decode HTML entities
                     body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
-                    if "<div" not in body:
+
+                    # Check if the email contains the username
+                    if username.lower() not in body.lower():
+                        print(f"Skipping email, username {username} not found.")
                         continue
-                    print("FOUND BODY WITH DIV IN MAIL")
-                    match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
-                    if not match:
-                        match = re.search(f">{username}[^<]*?<", body)
-                        if not match:
-                            username_pattern = f"Hi,\\s*{username},"
-                            match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
-                            if not match:
-                                print("MATCH NOT FOUND")
-                                continue
-                    print("Match from email found")
-                    match = re.search(r">(\d{6})<", body)
-                    if not match:
-                        match = re.search(r'\b\d{6}\b', body)
-                        if not match:
-                            print('Skip this email, "code" not found')
-                            continue
-                    code = match.group(1)
-                    if code:
-                        if data[0]:  # Recheck if there are seen messages to delete
-                            for num in seen_msg_ids:
-                                mail.store(num, '+FLAGS', '\\Deleted')
-                            mail.expunge()
-                            print("Deleted all seen messages after retrieving code")
-                        else:
-                            print("No code found, skipping deletion of seen messages")
-                        return code
+
+                    # Improved regex to find the code
+                    match = re.search(r'(\d{6})', body)
+                    if match:
+                        code = match.group(1)
+                        print(f"Found code: {code} in email for {username}")
+                        codes_found.append((num, code))
+
+            # if codes_found:
+            #     # Return the code from the most recent email
+            #     if data[0]:  # Recheck if there are seen messages to delete
+            #         for num in seen_msg_ids:
+            #             mail.store(num, '+FLAGS', '\\Deleted')
+            #         mail.expunge()
+            #         print("Deleted all seen messages after retrieving code")
+            #     else:
+            #         print("No code found, skipping deletion of seen messages")
+            #         time.sleep(5)
+            #     return codes_found[-1][1]
+            
+            if codes_found:
+                # Return the code from the most recent email
+                if seen_msg_ids:  # Recheck if there are seen messages to delete
+                    for num in seen_msg_ids:
+                        mail.store(num, '+FLAGS', '\\Deleted')
+                    mail.expunge()
+                    print("Deleted all seen messages after retrieving code")
+                else:
+                    print("No code found, skipping deletion of seen messages")
+                return codes_found[-1][1]
+            
+            print("Code not found in any unseen emails.")
             return False
         # =====================================================================Challenge Handler code ====================================
 
@@ -2308,49 +2362,104 @@ class InstagramBot:
             print("DATA --> " + str(data) + " AND RESULT IS " + str(result))
             assert result == "OK", "Error1 during get_code_from_email: %s" % result
             ids = data.pop().split()
+            
+            
+            
+            # for num in reversed(ids):
+            #     mail.store(num, "+FLAGS", "\\Seen")  # mark as read
+            #     result, data = mail.fetch(num, "(RFC822)")
+            #     assert result == "OK", "Error2 during get_code_from_email: %s" % result
+            #     msg = email.message_from_string(data[0][1].decode())
+            #     payloads = msg.get_payload()
+            #     if not isinstance(payloads, list):
+            #         payloads = [msg]
+            #     code = None
+                        
+            #     for payload in payloads:
+            #         body = payload.get_payload(decode=True).decode()
+            #         body = unescape(body)  # Decode HTML entities
+            #         body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
+            #         if "<div" not in body:
+            #             continue
+            #         print("FOUND BODY WITH DIV IN MAIL")
+            #         match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
+            #         if not match:
+            #             match = re.search(f">{username}[^<]*?<", body)
+            #             if not match:
+            #                 username_pattern = f"Hi,\\s*{username},"
+            #                 match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
+            #                 if not match:
+            #                     print("MATCH NOT FOUND")
+            #                     continue
+            #         print("Match from email found")
+            #         match = re.search(r">(\d{6})<", body)
+            #         if not match:
+            #             match = re.search(r'\b\d{6}\b', body)
+            #             if not match:
+            #                 print('Skip this email, "code" not found')
+            #                 continue
+            #         code = match.group(1)
+            #         if code:
+            #             if data[0]:  # Recheck if there are seen messages to delete
+            #                 for num in seen_msg_ids:
+            #                     mail.store(num, '+FLAGS', '\\Deleted')
+            #                 mail.expunge()
+            #                 print("Deleted all seen messages after retrieving code")
+            #             else:
+            #                 print("No code found, skipping deletion of seen messages")
+            #             return code
+            # return False
+            codes_found = []
+
             for num in reversed(ids):
                 mail.store(num, "+FLAGS", "\\Seen")  # mark as read
                 result, data = mail.fetch(num, "(RFC822)")
-                assert result == "OK", "Error2 during get_code_from_email: %s" % result
+                assert result == "OK", "Error during get_code_from_email: %s" % result
                 msg = email.message_from_string(data[0][1].decode())
                 payloads = msg.get_payload()
                 if not isinstance(payloads, list):
                     payloads = [msg]
-                code = None
-                        
+
                 for payload in payloads:
                     body = payload.get_payload(decode=True).decode()
                     body = unescape(body)  # Decode HTML entities
                     body = re.sub(r'\s+', ' ', body)  # Normalize whitespace
-                    if "<div" not in body:
+
+                    # Check if the email contains the username
+                    if username.lower() not in body.lower():
+                        print(f"Skipping email, username {username} not found.")
                         continue
-                    print("FOUND BODY WITH DIV IN MAIL")
-                    match = re.search(">([^>]*?({u})[^<]*?)<".format(u=username), body)
-                    if not match:
-                        match = re.search(f">{username}[^<]*?<", body)
-                        if not match:
-                            username_pattern = f"Hi,\\s*{username},"
-                            match = re.search(username_pattern, body.replace('\r\n', ''), re.IGNORECASE)
-                            if not match:
-                                print("MATCH NOT FOUND")
-                                continue
-                    print("Match from email found")
-                    match = re.search(r">(\d{6})<", body)
-                    if not match:
-                        match = re.search(r'\b\d{6}\b', body)
-                        if not match:
-                            print('Skip this email, "code" not found')
-                            continue
-                    code = match.group(1)
-                    if code:
-                        if data[0]:  # Recheck if there are seen messages to delete
-                            for num in seen_msg_ids:
-                                mail.store(num, '+FLAGS', '\\Deleted')
-                            mail.expunge()
-                            print("Deleted all seen messages after retrieving code")
-                        else:
-                            print("No code found, skipping deletion of seen messages")
-                        return code
+
+                    # Improved regex to find the code
+                    match = re.search(r'(\d{6})', body)
+                    if match:
+                        code = match.group(1)
+                        print(f"Found code: {code} in email for {username}")
+                        codes_found.append((num, code))
+
+            # if codes_found:
+            #     # Return the code from the most recent email
+            #     if data[0]:  # Recheck if there are seen messages to delete
+            #         for num in seen_msg_ids:
+            #             mail.store(num, '+FLAGS', '\\Deleted')
+            #         mail.expunge()
+            #         print("Deleted all seen messages after retrieving code")
+            #     else:
+            #         print("No code found, skipping deletion of seen messages")
+            #         time.sleep(5)
+            #     return codes_found[-1][1]
+            if codes_found:
+                # Return the code from the most recent email
+                if seen_msg_ids:  # Recheck if there are seen messages to delete
+                    for num in seen_msg_ids:
+                        mail.store(num, '+FLAGS', '\\Deleted')
+                    mail.expunge()
+                    print("Deleted all seen messages after retrieving code")
+                else:
+                    print("No code found, skipping deletion of seen messages")
+                return codes_found[-1][1]
+            
+            print("Code not found in any unseen emails.")
             return False
 
 
