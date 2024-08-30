@@ -2068,17 +2068,19 @@ class InstagramBot:
             if 'challenge_required' in str(e):
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 logging.error(f"challenge required error for {self.username}: {e}")
-
-                mess.sent=False
-                mess.sent_time=timezone.now()
-                mess.error = str(e)
-                mess.save()
-                self.task.message.add(mess)
-                self.task.failed_messages = len(recipients)
-                self.task.status = 'failed'
-                self.task.error_message = "Login required: Challenge encountered"
-                self.task.save()
-                raise e  # Stop execution by raising the exception
+                try:
+                    client.challenge_code_handler = challenge_code_handler
+                except Exception as e:
+                    mess.sent=False
+                    mess.sent_time=timezone.now()
+                    mess.error = str(e)
+                    mess.save()
+                    self.task.message.add(mess)
+                    self.task.failed_messages = len(recipients)
+                    self.task.status = 'failed'
+                    self.task.error_message = "Login required: Challenge encountered"
+                    self.task.save()
+                    raise e  # Stop execution by raising the exception
             else:
                 logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 print(f"Client error: {e}")
