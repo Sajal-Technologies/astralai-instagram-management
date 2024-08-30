@@ -2150,19 +2150,25 @@ class InstagramBot:
                 except ClientError as e:
                     print(f"Error sending message from {self.username} to {recipient}: {e}")
                     logging.error(f"Error sending message from {self.username} to {recipient}: {e}")
-                    mess = Message.objects.create(
-                        instagram_account=self.instagram_account,
-                        recipient=recipient,
-                        content=message,
-                        scheduled_time=timezone.now(),
-                        sent=False,
-                        sent_time=timezone.now(),
-                        error=f"Error sending message from {self.username} to {recipient}: {e}"
-                    )
-                    self.task.message.add(mess)
-                    self.task.failed_messages += 1
-                    self.task.save()
-                    logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                    if 'challenge_required' in str(e):
+                        logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
+                        logging.error(f"challenge required error for {self.username}: {e}")
+                        try:
+                            self.client.challenge_code_handler = challenge_code_handler
+                        except:
+                            mess = Message.objects.create(
+                                instagram_account=self.instagram_account,
+                                recipient=recipient,
+                                content=message,
+                                scheduled_time=timezone.now(),
+                                sent=False,
+                                sent_time=timezone.now(),
+                                error=f"Error sending message from {self.username} to {recipient}: {e}"
+                            )
+                            self.task.message.add(mess)
+                            self.task.failed_messages += 1
+                            self.task.save()
+                            logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                     # continue
                 finally:
                     minute_ = random.randint(3, 7)
