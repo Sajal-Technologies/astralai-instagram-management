@@ -2155,6 +2155,22 @@ class InstagramBot:
                         logging.error(f"challenge required error for {self.username}: {e}")
                         try:
                             self.client.challenge_code_handler = challenge_code_handler
+                            user_id = self.client.user_id_from_username(recipient)
+                            self.client.direct_send(message, [user_id])
+                            print(f"Message sent from {self.username} to {recipient}")
+                            mess = Message.objects.create(
+                                instagram_account=self.instagram_account,
+                                recipient=recipient,
+                                content=message,
+                                scheduled_time=timezone.now(),
+                                sent=True,
+                                sent_time=timezone.now()
+                            )
+                            self.task.sent_messages += 1
+                            self.task.message.add(mess)
+                            self.task.save()
+                            time.sleep(2)  # Add delay to avoid rate limits
+                            logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                         except:
                             mess = Message.objects.create(
                                 instagram_account=self.instagram_account,
