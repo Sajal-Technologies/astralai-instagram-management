@@ -2146,6 +2146,15 @@ class InstagramBot:
                     self.task.message.add(mess)
                     self.task.save()
                     time.sleep(2)  # Add delay to avoid rate limits
+                    
+                    # Deleting the lead after a successful message
+                    lead_obj = Lead.objects.filter(instagram_account=self.instagram_account, username=recipient).first()
+                    if lead_obj:
+                        lead_obj.delete()
+                        print(f"Lead Object deleted: username --->{str(self.username)}, Recipient---> {str(recipient)}")
+                    else:
+                        print(f"Lead object not found: username --->{str(self.username)}, Recipient---> {str(recipient)}")
+
                     logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                 except ClientError as e:
                     print(f"Error sending message from {self.username} to {recipient}: {e}")
@@ -2170,6 +2179,15 @@ class InstagramBot:
                             self.task.message.add(mess)
                             self.task.save()
                             time.sleep(2)  # Add delay to avoid rate limits
+
+                            # Deleting the lead after a successful message
+                            lead_obj = Lead.objects.filter(instagram_account=self.instagram_account, username=recipient).first()
+                            if lead_obj:
+                                lead_obj.delete()
+                                print(f"Lead Object deleted: username --->{str(self.username)}, Recipient---> {str(recipient)}")
+                            else:
+                                print(f"Lead object not found: username --->{str(self.username)}, Recipient---> {str(recipient)}")
+
                             logging.error(self.client._send_public_request("https://api.ipify.org/")) #NEWCODE
                         except:
                             mess = Message.objects.create(
